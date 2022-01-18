@@ -1,0 +1,17 @@
+<RCC>
+    <qresource prefix="/test">
+        <file>resources/refresh.png</file>
+        <file>MyTitle.qss</file>
+        <file>QtUdpChat.qss</file>
+        <file>StyleSheet.css</file>
+        <file>resources/chat.png</file>
+        <file>resources/close.png</file>
+        <file>resources/file.png</file>
+        <file>resources/max.png</file>
+        <file>resources/min.png</file>
+        <file>resources/pic.png</file>
+        <file>resources/quit.png</file>
+        <file>resources/restore.png</file>
+        <file>resources/chat_m.png</file>
+    </qresource>
+</RCC>
