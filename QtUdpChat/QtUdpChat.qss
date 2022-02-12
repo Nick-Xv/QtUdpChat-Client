@@ -5,7 +5,8 @@ height:28px;
 width:100px;
 border-radius:16px;
 color:rgb(40,222,235);
-background:rgba(23, 58, 95, 255)
+background:rgba(23, 58, 95, 255);
+font-size:20px
 }
 
 QPushButton:hover
@@ -30,6 +31,7 @@ background:rgba(61, 174, 184, 255)
 
 QLabel#RoomLabel
 {
+width:100px;
 color:rgb(40,222,235);
 }
 
