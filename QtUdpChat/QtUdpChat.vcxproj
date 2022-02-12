@@ -64,8 +64,8 @@
       <AdditionalIncludeDirectories>D:\mysql-8.0.27-winx64\include;D:\QT\5.12.6\msvc2015_64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <AdditionalLibraryDirectories>D:\mysql-8.0.27-winx64\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>D:\mysql-8.0.27-winx64\lib\libmysql.lib;ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
@@ -98,7 +98,6 @@
     <ClCompile Include="IocpServer.cpp" />
     <ClCompile Include="MyBorder.cpp" />
     <ClCompile Include="MyBorderContainer.cpp" />
-    <ClCompile Include="MySqlHandler.cpp" />
     <ClCompile Include="mytitlebar.cpp" />
     <ClCompile Include="UdpChatService.cpp" />
     <ClCompile Include="UdpHandler.cpp" />
@@ -115,13 +114,13 @@
   <ItemGroup>
     <QtMoc Include="UdpChatService.h" />
     <QtMoc Include="IocpServer.h" />
-    <ClInclude Include="MySqlHandler.h" />
     <ClInclude Include="UdpHandler.h" />
     <QtMoc Include="MyBorderContainer.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="MyTitle.qss" />
+    <None Include="QtUdpChat-Big.qss" />
     <None Include="QtUdpChat.qss" />
     <None Include="StyleSheet.css" />
   </ItemGroup>

@@ -1,5 +1,5 @@
 #pragma once
-#include "mysqlhandler.h"
+#pragma execution_character_set("utf-8")
 #include "iocpserver.h"
 #include <winsock2.h>
 #include <QMessageBox>
@@ -21,7 +21,9 @@ enum SERVICE_TYPE {
 	//SEND
 	SEND_RECORD,
 	SEND_RECORDS,
-	SEND_ACK
+	SEND_HEARTBEAT_ACK,
+	SEND_REGIST_ACK,
+	SEND_SIGNIN_ACK
 };
 
 class UdpChatService : public QObject
@@ -36,31 +38,26 @@ public:
 protected:
 	static DWORD WINAPI _CheckHeartbeatThread(LPVOID lpParam);//心跳线程函数
 
-	//bool get
 public slots:
-void serviceDispatcher(PER_IO_CONTEXT1* pIoContext, char* buf, MySqlHandler* mysqlHandler);
+void serviceDispatcher(PER_IO_CONTEXT1* pIoContext, char* buf);
 
 private:
 	IocpServer* iocpServer;
 
 	HANDLE* HeartbeatThreadHandle;
 
-	map<int, pair<PER_IO_CONTEXT1*,int>>* m_arrayClientContext[1000];//客户端vector指针数组
-
-	//找回密码
-	//void s_GetPassword(PER_IO_CONTEXT1* pIoContext, char* buf);
-	//获取聊天记录***未测试
-	void s_GetRecord(PER_IO_CONTEXT1* pIoContext, char* buf, MySqlHandler* mysqlHandler);
-	//发送消息***未测试
-	void s_PostRecord(PER_IO_CONTEXT1* pIoContext, char* buf, MySqlHandler* mysqlHandler);
+	//获取一条聊天记录
+	void s_GetRecord(PER_IO_CONTEXT1* pIoContext, char* buf);
+	//获取一堆聊天记录
+	void s_GetRecords(PER_IO_CONTEXT1* pIoContext, char* buf);
 	//用户注册tested
-	void s_PostRegist(PER_IO_CONTEXT1* pIoContext, char* buf, MySqlHandler* mysqlHandler);
+	void s_GetRegistACK(PER_IO_CONTEXT1* pIoContext, char* buf);
 	//检查密码***未测试
-	void s_CheckPassword(PER_IO_CONTEXT1* pIoContext, char* buf, MySqlHandler* mysqlHandler);
-	//心跳监测tested
-	void s_CheckHeartbeat(PER_IO_CONTEXT1* pIoContext, char* buf, MySqlHandler* mysqlHandler);
+	void s_GetSigninACK(PER_IO_CONTEXT1* pIoContext, char* buf);
+	//获取心跳监测答复
+	void s_GetHeartbeatACK(PER_IO_CONTEXT1* pIoContext, char* buf);
 
-	//发送答复报文tested
-	void s_PostACK(PER_IO_CONTEXT1* pIoContext, int result, SERVICE_TYPE type);
+	//发送请求报文
+	void s_PostRequest(char* addr, char* buffer);
 };
 

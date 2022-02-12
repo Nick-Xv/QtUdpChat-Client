@@ -54,9 +54,6 @@
     <ClCompile Include="UdpHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="MySqlHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="UdpChatService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -76,9 +73,6 @@
     <ClInclude Include="UdpHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="MySqlHandler.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="MyTitle.qss">
@@ -88,6 +82,9 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="StyleSheet.css">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="QtUdpChat-Big.qss">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>
