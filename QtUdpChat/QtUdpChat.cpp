@@ -1,26 +1,9 @@
 ﻿#include "QtUdpChat.h"
 
-int QtUdpChat::screenWidth = 0;
-int QtUdpChat::screenHeight = 0;
-int MyTitleBar::BUTTON_HEIGHT = 32;
-int MyTitleBar::BUTTON_WIDTH = 32;
-int MyTitleBar::TITLE_HEIGHT = 32;
-
 QtUdpChat::QtUdpChat(QWidget *parent)
     : QWidget(parent)
 {
-	QDesktopWidget* desktop = QApplication::desktop();
-	QRect screen = desktop->screenGeometry();
-	QtUdpChat::screenWidth = screen.width();
-	QtUdpChat::screenHeight = screen.height();
-	if (screenWidth > 2000) {
-		MyTitleBar::BUTTON_HEIGHT = 64;
-		MyTitleBar::BUTTON_WIDTH = 64;
-		MyTitleBar::TITLE_HEIGHT = 64;
-	}
-	qDebug() << QtUdpChat::screenWidth << QtUdpChat::screenHeight << endl;
-
-	this->resize(screenWidth/3, screenHeight/2);
+	this->resize(500,500);
 	//去除标题栏
 	//窗口最小化时，点击任务栏窗口可以显示出原窗口
 	this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowMinimizeButtonHint);
@@ -38,7 +21,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 
 	//设置一个标签
 	roomLabel = new QLabel(this);
-	roomLabel->setText("输入房间号");
+	roomLabel->setText("输入房间号            ");
 	roomLabel->setObjectName("RoomLabel");
 
 	//设置一个输入栏
@@ -48,7 +31,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 
 	//设置一个标签
 	nameHint = new QLabel(this);
-	nameHint->setText("输入用户名");
+	nameHint->setText("输入用户名            ");
 	nameHint->setObjectName("NameHint");
 
 	//设置一个输入栏
@@ -58,7 +41,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 
 	//设置一个标签
 	pwHint = new QLabel(this);
-	pwHint->setText("输入密码");
+	pwHint->setText("输入密码              ");
 	pwHint->setObjectName("PwHint");
 
 	//设置一个输入栏
@@ -69,7 +52,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 
 	//设置一个标签
 	pwCheckLabel = new QLabel(this);
-	pwCheckLabel->setText("确认密码");
+	pwCheckLabel->setText("确认密码              ");
 	pwCheckLabel->setObjectName("PwHint");
 	pwCheckLabel->setVisible(false);
 
@@ -135,10 +118,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	m_titleBar = new MyTitleBar(this, MIN_MAX_BUTTON, "QtUdpChat", ":/test/resources/chat.png", QSize(32, 32));
 	//m_titleBar->move(0, 0);
 
-	if (screenWidth > 2000) {
-		loadStyleSheet("QtUdpChat-Big");
-	}
-	else loadStyleSheet("QtUdpChat");
+	loadStyleSheet("QtUdpChat");
 
 	//按下最大化和还原按钮触发
 	connect(m_titleBar, &MyTitleBar::signalButtonMaxClicked, this, &QtUdpChat::onButtonMaxClicked);
@@ -146,9 +126,6 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	connect(buttonRegist, &QPushButton::clicked, this, &QtUdpChat::onButtonRegistClicked);
 	connect(buttonBack, &QPushButton::clicked, this, &QtUdpChat::onButtonBackClicked);
 	connect(buttonSendRegist, &QPushButton::clicked, this, &QtUdpChat::onButtonSendRegistClicked);
-
-	//启动完成端口服务
-	udpChatService = new UdpChatService();
 }
 
 QtUdpChat::~QtUdpChat() {
