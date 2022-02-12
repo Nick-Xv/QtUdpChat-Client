@@ -12,15 +12,18 @@
 #include <QLineEdit>
 #include "mytitlebar.h"
 #include "MyBorderContainer.h"
-#include "IocpServer.h"
+#include "UdpChatService.h"
 
 class QtUdpChat : public QWidget
 {
     Q_OBJECT
-
+	
 public:
     QtUdpChat(QWidget *parent = Q_NULLPTR);
 	~QtUdpChat();
+
+	static int screenWidth;
+	static int screenHeight;
 
 private:
 	QVBoxLayout* layout1;
@@ -47,7 +50,7 @@ private:
 	MyBorderContainer* myBorder;
 	MyTitleBar* m_titleBar;
 
-	IocpServer* iocpServer;
+	UdpChatService* udpChatService;
 
 private slots:
 	void onButtonMaxClicked();
