@@ -1,5 +1,4 @@
 #pragma once
-#pragma execution_character_set("utf-8")
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
@@ -8,6 +7,7 @@
 #include <QDebug>
 #include <QMetaType>
 #include <malloc.h>
+#include "mysqlhandler.h"
 using std::string;
 using std::vector;
 
@@ -16,6 +16,8 @@ extern enum SERVICE_TYPE;
 const int MAX_BUFFER_LEN1 = 8192;//缓冲区长度
 const int BUFFER_TEMP_LEN1 = 50;
 const int DEFAULT_PORT1 = 1000;//默认端口
+
+//const string DEFAULT_IP1 = "127.0.0.1";//默认IP地址
 
 // 在完成端口上投递的I/O操作的类型
 typedef enum _OPERATION_TYPE1 {
@@ -124,7 +126,7 @@ public:
 	~IocpServer();
 	bool serverStart();
 	void serverStop();
-	void SendDataTo(char* addr, char* buffer);//发送数据
+	void SendDataTo(PER_IO_CONTEXT1* pIoContext);//发送数据
 
 	class CIOCPModel1 {
 	public:
@@ -139,8 +141,8 @@ public:
 		void SetPort(const int& nPort) { m_nPort = nPort; }
 		static int _GetNoOfProcessors();//本机处理器数量
 
-		void SendDataTo(char* addr, char* buffer);//发送数据
-		 
+		void SendDataTo(PER_IO_CONTEXT1* pIoContext);//发送数据
+
 	protected:
 		bool _InitializeIOCP();//init iocp
 		bool _InitializeListenSocket();//init socket
@@ -150,8 +152,8 @@ public:
 		bool _PostSend(PER_IO_CONTEXT1* pIoContext);//投递发送tcp数据请求
 
 		bool _PostRecvFrom(PER_IO_CONTEXT1* pIoContext);//投递udp接收数据请求
-		bool _DoRecvFrom(PER_IO_CONTEXT1* pIoContext, int threadNo, int curBufNo);//处理udp数据到达请求
-		bool _PostSendTo(char* addr, char* buffer);//投递发送udp数据请求
+		bool _DoRecvFrom(PER_IO_CONTEXT1* pIoContext, int threadNo, int curBufNo, MySqlHandler* mysqlHandler);//处理udp数据到达请求
+		bool _PostSendTo(PER_IO_CONTEXT1* pIoContext);//投递发送udp数据请求
 
 		bool _DoAccept(PER_SOCKET_CONTEXT1* pSocketContext, PER_IO_CONTEXT1* pIoContext);//客户端连入处理
 		bool _DoRecv(PER_SOCKET_CONTEXT1* pSocketContext, PER_IO_CONTEXT1* pIoContext);//数据到达处理
@@ -187,9 +189,12 @@ public:
 
 		//缓冲区三维数组指针
 		char*** bufferPtr;
+
+		//数据库连接指针
+		MySqlHandler** mysqlHandler;
 	};
 signals:
-	void serviceHandler(PER_IO_CONTEXT1* pIoContext, char* buff);
+	void serviceHandler(PER_IO_CONTEXT1* pIoContext, char* buff, MySqlHandler* mysqlHandler);
 private:
 	CIOCPModel1* m_IOCP;//完成端口模型
 };
@@ -197,4 +202,5 @@ private:
 typedef struct _tagThreadParams_WORKER1 {
 	IocpServer::CIOCPModel1* pIOCPModel;//类指针，用于调用类中的函数
 	int nThreadNo;//线程编号
+	MySqlHandler* mysqlHandler;
 }THREADPARAMS_WORKER1, *PTHREADPARAM_WORKER1;

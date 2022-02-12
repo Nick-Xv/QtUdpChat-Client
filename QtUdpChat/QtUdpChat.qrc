@@ -13,7 +13,5 @@
         <file>resources/quit.png</file>
         <file>resources/restore.png</file>
         <file>resources/chat_m.png</file>
-        <file>QtUdpChat-Big.qss</file>
-        <file>resources/waiting.gif</file>
     </qresource>
 </RCC>

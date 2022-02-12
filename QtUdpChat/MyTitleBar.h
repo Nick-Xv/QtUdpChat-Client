@@ -24,10 +24,6 @@ public:
 	MyTitleBar(QWidget* parent, ButtonType type, QString title, QString iconPath, QSize iconSize);
 	~MyTitleBar();
 
-	static int BUTTON_HEIGHT;//按钮高度
-	static int BUTTON_WIDTH;//按钮宽度
-	static int TITLE_HEIGHT;//标题栏高度
-
 	//设置标题栏背景色，以及是否设置标题栏背景色透明
 	void setBackgroundColor(int r, int g, int b, bool isTrans = false);
 	//设置标题栏图标

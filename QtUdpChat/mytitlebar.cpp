@@ -1,5 +1,9 @@
 ﻿#include "mytitlebar.h"
 
+const int BUTTON_HEIGHT = 32;//按钮高度
+const int BUTTON_WIDTH = 32;//按钮宽度
+const int TITLE_HEIGHT = 32;//标题栏高度
+
 MyTitleBar::MyTitleBar(QWidget* parent, ButtonType type, QString title, QString iconPath, QSize iconSize):QWidget(parent),
 										m_colorR(153),
 										m_colorG(153),
