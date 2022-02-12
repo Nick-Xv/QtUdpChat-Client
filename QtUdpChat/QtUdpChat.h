@@ -12,6 +12,7 @@
 #include <QLineEdit>
 #include "mytitlebar.h"
 #include "MyBorderContainer.h"
+#include "IocpServer.h"
 
 class QtUdpChat : public QWidget
 {
@@ -33,6 +34,12 @@ private:
 	QLineEdit* pwInput;
 	QPushButton* buttonRegist;
 	QPushButton* buttonRecover;
+	QLabel* roomLabel;
+	QLineEdit* roomInput;
+	QPushButton* buttonSendRegist;
+	QPushButton* buttonBack;
+	QLabel* pwCheckLabel;
+	QLineEdit* pwCheckInput;
 
 	void paintEvent(QPaintEvent* event);
 	void loadStyleSheet(const QString & sheetName);
@@ -40,7 +47,12 @@ private:
 	MyBorderContainer* myBorder;
 	MyTitleBar* m_titleBar;
 
+	IocpServer* iocpServer;
+
 private slots:
 	void onButtonMaxClicked();
 	void onButtonRestoreClicked();
+	void onButtonRegistClicked();
+	void onButtonBackClicked();
+	void onButtonSendRegistClicked();
 };

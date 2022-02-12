@@ -1,4 +1,4 @@
-QPushButton#ButtonEnter
+QPushButton
 {
 border:2px solid rgb(40,222,235);
 height:28px;
@@ -8,7 +8,7 @@ color:rgb(40,222,235);
 background:rgba(23, 58, 95, 255)
 }
 
-QPushButton#ButtonEnter:hover
+QPushButton:hover
 {
 border:2px solid rgb(40,222,235);
 height:28px;
@@ -18,7 +18,7 @@ color:rgb(40,222,235);
 background:rgba(29, 80, 111, 255)
 }
 
-QPushButton#ButtonEnter:pressed
+QPushButton:pressed
 {
 border:2px solid rgb(40,222,235);
 height:28px;
@@ -26,6 +26,11 @@ width:100px;
 border-radius:16px;
 color:rgb(40,222,235);
 background:rgba(61, 174, 184, 255)
+}
+
+QLabel#RoomLabel
+{
+color:rgb(40,222,235);
 }
 
 QLabel#NameHint

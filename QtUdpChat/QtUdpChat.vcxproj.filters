@@ -31,6 +31,12 @@
     <QtMoc Include="MyBorderContainer.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="UdpChatService.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <QtMoc Include="IocpServer.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -49,6 +55,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="MySqlHandler.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="UdpChatService.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="IocpServer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
