@@ -1,11 +1,11 @@
-#pragma once
+﻿#pragma once
 #pragma execution_character_set("utf-8")
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
 #include <vector>
 #include <mswsock.h>
-#include <QDebug>
+#include <QDebug> 
 #include <QMetaType>
 #include <malloc.h>
 using std::string;

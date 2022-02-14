@@ -1,4 +1,4 @@
-#include "IocpServer.h"
+﻿#include "IocpServer.h"
 
 //每个处理器上产生多少个线程()
 const int WORKER_THREADS_PER_PROCESSOR1 = 2;
@@ -646,7 +646,7 @@ bool IocpServer::CIOCPModel1::_DoRecvFrom(PER_IO_CONTEXT1* pIoContext, int threa
 	}
 }
 
-//
+//发送SendTo通信
 bool IocpServer::CIOCPModel1::_PostSendTo(char* addr, char* buffer) {
 	PER_IO_CONTEXT1* pSendToIoContext = m_pListenContextUdp->GetNewIoContext();
 	pSendToIoContext->m_sockAccept = m_pListenContextUdp->m_Socket;

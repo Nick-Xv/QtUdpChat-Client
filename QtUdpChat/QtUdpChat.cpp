@@ -1,5 +1,16 @@
 ﻿#include "QtUdpChat.h"
 
+const int icon_ratio = 60;
+const int button_width_ratio = 12;
+const int button_height_ratio = 68;
+const int border_radius_ratio = 68 * 2;
+const int font_ratio = 80;
+const int img_ratio = 40;
+const int window_ratio = 10;
+const int title_ratio = 250;
+
+const int buffer_size = 8192;
+
 int QtUdpChat::screenWidth = 0;
 int QtUdpChat::screenHeight = 0;
 int MyTitleBar::BUTTON_HEIGHT = 32;
@@ -13,14 +24,14 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	QRect screen = desktop->screenGeometry();
 	QtUdpChat::screenWidth = screen.width();
 	QtUdpChat::screenHeight = screen.height();
-	if (screenWidth > 2000) {
-		MyTitleBar::BUTTON_HEIGHT = 64;
-		MyTitleBar::BUTTON_WIDTH = 64;
-		MyTitleBar::TITLE_HEIGHT = 64;
-	}
+
+	MyTitleBar::BUTTON_HEIGHT = screenWidth / icon_ratio;
+	MyTitleBar::BUTTON_WIDTH = screenWidth / icon_ratio;
+	MyTitleBar::TITLE_HEIGHT = screenWidth / icon_ratio;
+
 	qDebug() << QtUdpChat::screenWidth << QtUdpChat::screenHeight << endl;
 
-	this->resize(screenWidth/3, screenHeight/2);
+	this->resize(screenWidth / 3, screenHeight / 2);
 	//去除标题栏
 	//窗口最小化时，点击任务栏窗口可以显示出原窗口
 	this->setWindowFlags(Qt::FramelessWindowHint | Qt::WindowMinimizeButtonHint);
@@ -31,7 +42,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	//设置一个图片
 	img = new QImage(":/test/resources/chat_m.png");
 	imgscaled = new QImage();
-	*imgscaled = img->scaled(48,48,Qt::KeepAspectRatio);
+	*imgscaled = img->scaled(screenWidth / img_ratio, screenWidth / img_ratio, Qt::KeepAspectRatio);
 	imgLabel = new QLabel(this);
 	imgLabel->setPixmap(QPixmap::fromImage(*imgscaled));
 	imgLabel->setObjectName("ImgLabel");
@@ -40,38 +51,54 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	roomLabel = new QLabel(this);
 	roomLabel->setText("输入房间号");
 	roomLabel->setObjectName("RoomLabel");
+	styleSheetTemp = "font-size:";
+	styleSheetTemp.append(QString::number(screenWidth / font_ratio));
+	styleSheetTemp.append("px;");
+	roomLabel->setStyleSheet(styleSheetTemp);
 
 	//设置一个输入栏
 	roomInput = new QLineEdit(this);
 	roomInput->setObjectName("RoomInput");
 	roomInput->setPlaceholderText("房间号");
+	roomInput->setStyleSheet(styleSheetTemp);
 
 	//设置一个标签
 	nameHint = new QLabel(this);
 	nameHint->setText("输入用户名");
 	nameHint->setObjectName("NameHint");
+	nameHint->setStyleSheet(styleSheetTemp);
 
 	//设置一个输入栏
 	nameInput = new QLineEdit(this);
 	nameInput->setPlaceholderText("Username");
 	nameInput->setObjectName("NameInput");
+	nameInput->setStyleSheet(styleSheetTemp);
 
 	//设置一个标签
 	pwHint = new QLabel(this);
 	pwHint->setText("输入密码");
 	pwHint->setObjectName("PwHint");
+	pwHint->setStyleSheet(styleSheetTemp);
 
 	//设置一个输入栏
 	pwInput = new QLineEdit(this);
 	pwInput->setPlaceholderText("Password");
 	pwInput->setObjectName("PwInput");
 	pwInput->setEchoMode(QLineEdit::Password);
+	pwInput->setStyleSheet(styleSheetTemp);
 
 	//设置一个标签
 	pwCheckLabel = new QLabel(this);
 	pwCheckLabel->setText("确认密码");
 	pwCheckLabel->setObjectName("PwHint");
 	pwCheckLabel->setVisible(false);
+	pwCheckLabel->setStyleSheet(styleSheetTemp);
+
+	//设置一个标签
+	serverAddrLabel = new QLabel(this);
+	serverAddrLabel->setText("服务器地址");
+	serverAddrLabel->setObjectName("ServerAddrLabel");
+	serverAddrLabel->setStyleSheet(styleSheetTemp);
 
 	//设置一个输入栏
 	pwCheckInput = new QLineEdit(this);
@@ -79,16 +106,34 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	pwCheckInput->setObjectName("PwInput");
 	pwCheckInput->setEchoMode(QLineEdit::Password);
 	pwCheckInput->setVisible(false);
+	pwCheckInput->setStyleSheet(styleSheetTemp);
+
+	//设置一个输入框
+	serverAddrInput = new QLineEdit(this);
+	serverAddrInput->setPlaceholderText("Server Address");
+	serverAddrInput->setObjectName("ServerAddrInput");
+	serverAddrInput->setStyleSheet(styleSheetTemp);
 
 	//设置一个按钮
 	buttonEnter = new QPushButton(this);
 	buttonEnter->setText("进入聊天室");
 	buttonEnter->setObjectName("ButtonEnter");
+	styleSheetTemp = "QPushButton{font-size:";
+	styleSheetTemp.append(QString::number(screenWidth / font_ratio));
+	styleSheetTemp.append("px;width:");
+	styleSheetTemp.append(QString::number(screenWidth / button_width_ratio));
+	styleSheetTemp.append("px;height:");
+	styleSheetTemp.append(QString::number(screenWidth / button_height_ratio));
+	styleSheetTemp.append("px;border-radius:");
+	styleSheetTemp.append(QString::number(screenWidth / border_radius_ratio));
+	styleSheetTemp.append("px;}");
+	buttonEnter->setStyleSheet(styleSheetTemp);
 
 	//设置一个按钮
 	buttonRegist = new QPushButton(this);
 	buttonRegist->setText("新用户注册");
 	buttonRegist->setObjectName("ButtonRegist");
+	buttonRegist->setStyleSheet(styleSheetTemp);
 
 	//设置一个按钮
 	/*
@@ -102,43 +147,61 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	buttonSendRegist->setText("注册");
 	buttonSendRegist->setObjectName("ButtonSendRegist");
 	buttonSendRegist->setVisible(false);
+	buttonSendRegist->setStyleSheet(styleSheetTemp);
+	//buttonSendRegist->setStyleSheet("height:50px;width:200px");
 
 	//设置一个按钮
 	buttonBack = new QPushButton(this);
 	buttonBack->setText("返回");
 	buttonBack->setObjectName("ButtonBack");
 	buttonBack->setVisible(false);
+	buttonBack->setStyleSheet(styleSheetTemp);
+
+	waitLabel = new QLabel();
+	waitMovie = new QMovie(":/test/resources/wait2.gif");
+	waitMovie->setScaledSize(QSize(screenWidth / 100, screenWidth / 100));
+	waitLabel->setMovie(waitMovie);
+	//waitLabel->setStyleSheet("border:1px solid rgb(40,222,235); height:30px");
+	//waitLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 
 	//布局设置
 	layout1 = new QVBoxLayout(this);
+	layout2 = new QHBoxLayout(this);
+	layout3 = new QVBoxLayout(this);
+	layout4 = new QVBoxLayout(buttonSendRegist);
+	layout4->setMargin(0);
+	layout4->setContentsMargins(screenWidth / title_ratio,0,0,0);
+	layout4->addWidget(waitLabel);
+	layout1->addWidget(serverAddrLabel, 0, Qt::AlignLeft);
+	layout1->addWidget(serverAddrInput, 0, Qt::AlignLeft);
 	layout1->addStretch();
-	layout1->addWidget(imgLabel, 0, Qt::AlignCenter);
-	layout1->addWidget(roomLabel, 0, Qt::AlignCenter);
-	layout1->addWidget(roomInput, 0, Qt::AlignCenter);
-	layout1->addWidget(nameHint, 0, Qt::AlignCenter);
-	layout1->addWidget(nameInput, 0, Qt::AlignCenter);
-	layout1->addWidget(pwHint, 0, Qt::AlignCenter);
-	layout1->addWidget(pwInput, 0, Qt::AlignCenter);
-	layout1->addWidget(pwCheckLabel, 0, Qt::AlignCenter);
-	layout1->addWidget(pwCheckInput, 0, Qt::AlignCenter);
-	layout1->addWidget(buttonEnter, 0, Qt::AlignCenter);
-	layout1->addWidget(buttonRegist, 0, Qt::AlignCenter);
-	layout1->addWidget(buttonSendRegist, 0, Qt::AlignCenter);
-	layout1->addWidget(buttonBack, 0, Qt::AlignCenter);
+	layout3->addWidget(imgLabel, 0, Qt::AlignCenter);
+	layout3->addWidget(roomLabel, 0, Qt::AlignLeft);
+	layout3->addWidget(roomInput, 0, Qt::AlignLeft);
+	layout3->addWidget(nameHint, 0, Qt::AlignLeft);
+	layout3->addWidget(nameInput, 0, Qt::AlignLeft);
+	layout3->addWidget(pwHint, 0, Qt::AlignLeft);
+	layout3->addWidget(pwInput, 0, Qt::AlignLeft);
+	layout3->addWidget(pwCheckLabel, 0, Qt::AlignLeft);
+	layout3->addWidget(pwCheckInput, 0, Qt::AlignLeft);
+	layout3->addWidget(buttonEnter, 0, Qt::AlignCenter);
+	layout3->addWidget(buttonRegist, 0, Qt::AlignCenter);
+	layout3->addWidget(buttonSendRegist, 0, Qt::AlignCenter);
+	layout3->addWidget(buttonBack, 0, Qt::AlignCenter);
+	layout2->addStretch();
+	layout2->addLayout(layout3);
+	layout2->addStretch();
+	layout1->addLayout(layout2);
 	layout1->addStretch();
 	//layout1->addWidget(buttonRecover, 0, Qt::AlignRight);
-	layout1->setContentsMargins(0, 32, 0, 0);
+	layout1->setContentsMargins(0, screenWidth / icon_ratio, 0, 0);
 
 	myBorder = new MyBorderContainer(this);
-	myBorder->setMinWindowSize(buttonEnter->width() + 10, buttonEnter->width() + 10);
+	myBorder->setMinWindowSize(screenWidth / window_ratio, screenWidth / window_ratio);
 
-	m_titleBar = new MyTitleBar(this, MIN_MAX_BUTTON, "QtUdpChat", ":/test/resources/chat.png", QSize(32, 32));
-	//m_titleBar->move(0, 0);
-
-	if (screenWidth > 2000) {
-		loadStyleSheet("QtUdpChat-Big");
-	}
-	else loadStyleSheet("QtUdpChat");
+	m_titleBar = new MyTitleBar(this, MIN_MAX_BUTTON, "QtUdpChat", ":/test/resources/chat.png", QSize(screenWidth / icon_ratio, screenWidth / icon_ratio));
+	m_titleBar->setTitleContent("聊天室", screenWidth / title_ratio);
+	loadStyleSheet("QtUdpChat");
 
 	//按下最大化和还原按钮触发
 	connect(m_titleBar, &MyTitleBar::signalButtonMaxClicked, this, &QtUdpChat::onButtonMaxClicked);
@@ -149,6 +212,10 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 
 	//启动完成端口服务
 	udpChatService = new UdpChatService();
+
+	//绑定服务信号槽
+	//注册
+	connect(udpChatService, &UdpChatService::post_regist_ack, this, &QtUdpChat::doRegistAck);
 }
 
 QtUdpChat::~QtUdpChat() {
@@ -218,5 +285,51 @@ void QtUdpChat::onButtonBackClicked() {
 }
 
 void QtUdpChat::onButtonSendRegistClicked() {
+	addr = new char[16];
+	memset(addr, 0, 16);
+	QString serverAddress = serverAddrInput->text();
+	if (serverAddress.length() < 8) {
+		QMessageBox::critical(NULL, "错误", "服务器地址未输入", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+		return;
+	}
+	QByteArray temp;
+	temp.append(serverAddress);
+	addr = temp.data();
 
+	buffer = new char[buffer_size];
+	memset(buffer, 0, buffer_size);
+	buffer[0] = POST_REGIST;
+	
+	unsigned short id_cur = 1, id_all = 1;
+	memcpy(&buffer[1], &(id_cur), sizeof(id_cur));
+	memcpy(&buffer[3], &(id_all), sizeof(id_all));
+	QString usernameString = nameInput->text();
+	QString passwordString = pwInput->text();
+	QString passwordCheckString = pwCheckInput->text();
+	if (passwordString != passwordCheckString) {
+		QMessageBox::critical(NULL, "错误", "两个密码不一致", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+		return;
+	}
+	QByteArray temp1;
+	temp1.append(usernameString);
+	const char* username = temp1.data();
+	QByteArray temp2;
+	temp2.append(passwordString);
+	const char* password = temp2.data();
+	memcpy(&buffer[5], username, strlen(username));
+	memcpy(&buffer[5 + strlen(username) + 1], password, strlen(password));
+
+	//显示转圈
+	waitMovie->start();
+	//发送请求
+	udpChatService->s_PostRequest(addr, buffer);
+}
+
+void QtUdpChat::doRegistAck(char* buffer) {
+	//输出返回值
+	char test;
+	memcpy(&test, &buffer[1], 1);
+	qDebug() << (int)test << endl;
+	waitMovie->stop();
+	waitLabel->setVisible(false);
 }

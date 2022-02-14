@@ -51,3 +51,8 @@ padding-right:150px;
 font-size:36px;
 color:rgb(40,222,235);
 }
+
+QLabel#ServerAddrLabel
+{
+color:rgb(40,222,235);
+}

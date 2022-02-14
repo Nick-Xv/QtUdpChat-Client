@@ -34,12 +34,17 @@ public:
 	~UdpChatService();
 	bool initService();
 	void closeService();
+	//发送请求报文
+	void s_PostRequest(char* addr, char* buffer);
 
 protected:
 	static DWORD WINAPI _CheckHeartbeatThread(LPVOID lpParam);//心跳线程函数
 
 public slots:
 void serviceDispatcher(PER_IO_CONTEXT1* pIoContext, char* buf);
+
+signals:
+void post_regist_ack(char* buffer);
 
 private:
 	IocpServer* iocpServer;
@@ -56,8 +61,5 @@ private:
 	void s_GetSigninACK(PER_IO_CONTEXT1* pIoContext, char* buf);
 	//获取心跳监测答复
 	void s_GetHeartbeatACK(PER_IO_CONTEXT1* pIoContext, char* buf);
-
-	//发送请求报文
-	void s_PostRequest(char* addr, char* buffer);
 };
 

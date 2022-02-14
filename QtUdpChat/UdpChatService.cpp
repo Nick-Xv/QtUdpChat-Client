@@ -97,6 +97,7 @@ void UdpChatService::s_GetRecords(PER_IO_CONTEXT1* pIoContext, char* buf) {
 //用户注册tested
 void UdpChatService::s_GetRegistACK(PER_IO_CONTEXT1* pIoContext, char* buf) {
 	qDebug() << "收到registACK" << endl;
+	emit post_regist_ack(buf);
 }
 //检查密码***未测试
 void UdpChatService::s_GetSigninACK(PER_IO_CONTEXT1* pIoContext, char* buf) {
