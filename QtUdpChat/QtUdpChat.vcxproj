@@ -95,12 +95,12 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="ChatRoom.cpp" />
     <ClCompile Include="IocpServer.cpp" />
     <ClCompile Include="MyBorder.cpp" />
     <ClCompile Include="MyBorderContainer.cpp" />
     <ClCompile Include="mytitlebar.cpp" />
     <ClCompile Include="UdpChatService.cpp" />
-    <ClCompile Include="UdpHandler.cpp" />
     <QtMoc Include="QtUdpChat.h" />
     <ClCompile Include="QtUdpChat.cpp" />
     <ClCompile Include="main.cpp" />
@@ -114,7 +114,7 @@
   <ItemGroup>
     <QtMoc Include="UdpChatService.h" />
     <QtMoc Include="IocpServer.h" />
-    <ClInclude Include="UdpHandler.h" />
+    <QtMoc Include="ChatRoom.h" />
     <QtMoc Include="MyBorderContainer.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>

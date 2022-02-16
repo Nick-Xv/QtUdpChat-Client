@@ -37,6 +37,9 @@
     <QtMoc Include="IocpServer.h">
       <Filter>Header Files</Filter>
     </QtMoc>
+    <QtMoc Include="ChatRoom.h">
+      <Filter>Header Files</Filter>
+    </QtMoc>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -51,13 +54,13 @@
     <ClCompile Include="MyBorderContainer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="UdpHandler.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="UdpChatService.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="IocpServer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="ChatRoom.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -68,9 +71,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="UdpHandler.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

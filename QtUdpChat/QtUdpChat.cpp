@@ -306,8 +306,14 @@ void QtUdpChat::onButtonSendRegistClicked() {
 	QString usernameString = nameInput->text();
 	QString passwordString = pwInput->text();
 	QString passwordCheckString = pwCheckInput->text();
+	if (usernameString.length() <= 1) {
+		//用户名太短了
+		QMessageBox::critical(NULL, "错误", "用户名太短了", QMessageBox::Yes, QMessageBox::Yes);
+		return;
+	}
+
 	if (passwordString != passwordCheckString) {
-		QMessageBox::critical(NULL, "错误", "两个密码不一致", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+		QMessageBox::critical(NULL, "错误", "两个密码不一致", QMessageBox::Yes, QMessageBox::Yes);
 		return;
 	}
 	QByteArray temp1;
@@ -321,6 +327,7 @@ void QtUdpChat::onButtonSendRegistClicked() {
 
 	//显示转圈
 	waitMovie->start();
+	waitLabel->setVisible(true);
 	//发送请求
 	udpChatService->s_PostRequest(addr, buffer);
 }
@@ -330,6 +337,33 @@ void QtUdpChat::doRegistAck(char* buffer) {
 	char test;
 	memcpy(&test, &buffer[1], 1);
 	qDebug() << (int)test << endl;
+	
+	//根据返回值进行操作
+	switch ((int)test) {
+	case 0:
+		//数据错误
+		QMessageBox::critical(NULL, "错误", "数据错误", QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	case 1:
+		//用户名已存在
+		QMessageBox::critical(NULL, "错误", "用户名已存在", QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	case 2:
+		//数据库错误
+		QMessageBox::critical(NULL, "错误", "数据库错误", QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	case 3:
+		//注册成功
+		QMessageBox::information(NULL, "信息", "注册成功！", QMessageBox::Yes, QMessageBox::Yes);
+		//此处跳转到登录页面
+		onButtonBackClicked();
+		break;
+	default:
+		//未知返回值
+		QMessageBox::critical(NULL, "错误", "未知返回值错误", QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	}
+	//停止转圈
 	waitMovie->stop();
 	waitLabel->setVisible(false);
 }
