@@ -1,8 +1,4 @@
 ﻿#include "UdpChatService.h"
-//释放指针宏
-#define RELEASE(x) {if((x)!=nullptr){delete(x);(x)=nullptr;}}
-//释放句柄宏
-#define RELEASE_HANDLE(x) {if((x)!=nullptr&&(x)!=INVALID_HANDLE_VALUE){CloseHandle(x);(x)=nullptr;}}
 
 //构造
 UdpChatService::UdpChatService()
@@ -26,10 +22,6 @@ UdpChatService::~UdpChatService()
 bool UdpChatService::initService() {
 	iocpServer = new IocpServer();
 
-	//打开心跳发送线程
-	HeartbeatThreadHandle = new HANDLE;
-	*HeartbeatThreadHandle = ::CreateThread(0, 0, _CheckHeartbeatThread, this, 0, nullptr);
-
 	//绑定服务信号槽
 	QObject::connect(iocpServer, &IocpServer::serviceHandler,
 		this, &UdpChatService::serviceDispatcher);
@@ -40,8 +32,6 @@ bool UdpChatService::initService() {
 //关闭服务
 void UdpChatService::closeService() {
 	iocpServer->serverStop();
-	RELEASE_HANDLE(*HeartbeatThreadHandle);
-	RELEASE(HeartbeatThreadHandle);
 }
 
 //服务分配处理
@@ -75,7 +65,39 @@ DWORD WINAPI UdpChatService::_CheckHeartbeatThread(LPVOID lpParam) {
 	while (1) {
 		Sleep(10000);
 		//发送SENDTO
+		memset(buffer, 0, buffer_size);
+		buffer[0] = POST_REGIST;
 
+		unsigned short id_cur = 1, id_all = 1;
+		memcpy(&buffer[1], &(id_cur), sizeof(id_cur));
+		memcpy(&buffer[3], &(id_all), sizeof(id_all));
+		QString usernameString = nameInput->text();
+		QString passwordString = pwInput->text();
+		QString passwordCheckString = pwCheckInput->text();
+		if (usernameString.length() <= 1) {
+			//用户名太短了
+			QMessageBox::critical(NULL, "错误", "用户名太短了", QMessageBox::Yes, QMessageBox::Yes);
+			return;
+		}
+
+		if (passwordString != passwordCheckString) {
+			QMessageBox::critical(NULL, "错误", "两个密码不一致", QMessageBox::Yes, QMessageBox::Yes);
+			return;
+		}
+		QByteArray temp1;
+		temp1.append(usernameString);
+		const char* username = temp1.data();
+		QByteArray temp2;
+		temp2.append(passwordString);
+		const char* password = temp2.data();
+		memcpy(&buffer[5], username, strlen(username));
+		memcpy(&buffer[5 + strlen(username) + 1], password, strlen(password));
+
+		//显示转圈
+		waitMovie->start();
+		waitLabel->setVisible(true);
+		//发送请求
+		udpChatService->s_PostRequest(addr, buffer);
 		//
 	}
 	return 0;
@@ -89,10 +111,12 @@ void UdpChatService::s_PostRequest(char* addr, char* buffer) {
 //获取一条聊天记录
 void UdpChatService::s_GetRecord(PER_IO_CONTEXT1* pIoContext, char* buf) {
 	qDebug() << "收到record" << endl;
+	emit post_record_ack(buf);
 }
 //获取一堆聊天记录
 void UdpChatService::s_GetRecords(PER_IO_CONTEXT1* pIoContext, char* buf) {
 	qDebug() << "收到records" << endl;
+	emit post_records_ack(buf);
 }
 //用户注册tested
 void UdpChatService::s_GetRegistACK(PER_IO_CONTEXT1* pIoContext, char* buf) {
@@ -102,8 +126,10 @@ void UdpChatService::s_GetRegistACK(PER_IO_CONTEXT1* pIoContext, char* buf) {
 //检查密码***未测试
 void UdpChatService::s_GetSigninACK(PER_IO_CONTEXT1* pIoContext, char* buf) {
 	qDebug() << "收到signinACK" << endl;
+	emit post_signin_ack(buf);
 }
 //获取心跳监测答复
 void UdpChatService::s_GetHeartbeatACK(PER_IO_CONTEXT1* pIoContext, char* buf) {
 	qDebug() << "收到heartbeatACK" << endl;
+	emit post_heartbeat_ack(buf);
 }

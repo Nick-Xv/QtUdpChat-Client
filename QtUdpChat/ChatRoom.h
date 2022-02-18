@@ -7,7 +7,6 @@
 #include "mytitlebar.h"
 #include "MyBorderContainer.h"
 #include "UdpChatService.h"
-#include "QtUdpChat.h"
 class ChatRoom : public QWidget
 {
 	Q_OBJECT

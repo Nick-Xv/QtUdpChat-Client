@@ -16,6 +16,7 @@
 #include "mytitlebar.h"
 #include "MyBorderContainer.h"
 #include "UdpChatService.h"
+#include "ChatRoom.h"
 
 class QtUdpChat : public QWidget
 {
@@ -27,6 +28,9 @@ public:
 
 	static int screenWidth;
 	static int screenHeight;
+
+protected:
+	static DWORD WINAPI _CheckHeartbeatThread(LPVOID lpParam);//心跳线程函数
 
 private:
 	QVBoxLayout* layout1;//总layout
@@ -66,6 +70,12 @@ private:
 
 	UdpChatService* udpChatService;
 
+	//聊天室界面类
+	ChatRoom* chatRoom;
+
+	//心跳线程句柄
+	HANDLE* HeartbeatThreadHandle;
+
 private slots:
 	void onButtonMaxClicked();
 	void onButtonRestoreClicked();
@@ -74,4 +84,7 @@ private slots:
 	void onButtonSendRegistClicked();
 
 	void doRegistAck(char* buffer);
+	void doSigninAck(char* buffer);
+
+	void doSignout();
 };

@@ -1,5 +1,10 @@
 ﻿#include "QtUdpChat.h"
 
+//释放指针宏
+#define RELEASE(x) {if((x)!=nullptr){delete(x);(x)=nullptr;}}
+//释放句柄宏
+#define RELEASE_HANDLE(x) {if((x)!=nullptr&&(x)!=INVALID_HANDLE_VALUE){CloseHandle(x);(x)=nullptr;}}
+
 const int icon_ratio = 60;
 const int button_width_ratio = 12;
 const int button_height_ratio = 68;
@@ -200,7 +205,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	myBorder->setMinWindowSize(screenWidth / window_ratio, screenWidth / window_ratio);
 
 	m_titleBar = new MyTitleBar(this, MIN_MAX_BUTTON, "QtUdpChat", ":/test/resources/chat.png", QSize(screenWidth / icon_ratio, screenWidth / icon_ratio));
-	m_titleBar->setTitleContent("聊天室", screenWidth / title_ratio);
+	m_titleBar->setTitleContent("聊天室", screenWidth / font_ratio);
 	loadStyleSheet("QtUdpChat");
 
 	//按下最大化和还原按钮触发
@@ -213,9 +218,14 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	//启动完成端口服务
 	udpChatService = new UdpChatService();
 
+	//加载聊天室界面
+	chatRoom = new ChatRoom();
+
 	//绑定服务信号槽
 	//注册
 	connect(udpChatService, &UdpChatService::post_regist_ack, this, &QtUdpChat::doRegistAck);
+	//登录
+	connect(udpChatService, &UdpChatService::post_signin_ack, this, &QtUdpChat::doSigninAck);
 }
 
 QtUdpChat::~QtUdpChat() {
@@ -225,6 +235,8 @@ QtUdpChat::~QtUdpChat() {
 	delete img;
 	delete m_titleBar;
 	delete layout1;
+	RELEASE_HANDLE(*HeartbeatThreadHandle);
+	RELEASE(HeartbeatThreadHandle);
 }
 
 void QtUdpChat::paintEvent(QPaintEvent* event){
@@ -332,6 +344,12 @@ void QtUdpChat::onButtonSendRegistClicked() {
 	udpChatService->s_PostRequest(addr, buffer);
 }
 
+//退出登录
+void QtUdpChat::doSignout() {
+	RELEASE_HANDLE(*HeartbeatThreadHandle);
+	RELEASE(HeartbeatThreadHandle);
+}
+
 void QtUdpChat::doRegistAck(char* buffer) {
 	//输出返回值
 	char test;
@@ -367,3 +385,45 @@ void QtUdpChat::doRegistAck(char* buffer) {
 	waitMovie->stop();
 	waitLabel->setVisible(false);
 }
+
+void QtUdpChat::doSigninAck(char* buffer) {
+	//输出返回值
+	char test;
+	memcpy(&test, &buffer[1], 1);
+	qDebug() << (int)test << endl;
+
+	//根据返回值进行操作
+	switch ((int)test) {
+	case 0:
+		//数据错误
+		QMessageBox::critical(NULL, "错误", "数据错误", QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	case 1:
+		//密码正确
+		QMessageBox::information(NULL, "信息", "登录成功", QMessageBox::Yes, QMessageBox::Yes);
+		//进入聊天室页面
+		chatRoom->show();
+		this->hide();
+		//打开心跳发送线程
+		HeartbeatThreadHandle = new HANDLE;
+		*HeartbeatThreadHandle = ::CreateThread(0, 0, _CheckHeartbeatThread, this, 0, nullptr);
+
+		break;
+	case 2:
+		//数据库错误
+		QMessageBox::critical(NULL, "错误", "数据库错误", QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	case 3:
+		//密码错误
+		QMessageBox::critical(NULL, "错误", "密码错误！", QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	default:
+		//未知返回值
+		QMessageBox::critical(NULL, "错误", "未知返回值错误", QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	}
+	//停止转圈
+	waitMovie->stop();
+	waitLabel->setVisible(false);
+}
+

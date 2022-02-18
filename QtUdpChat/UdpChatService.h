@@ -37,19 +37,18 @@ public:
 	//发送请求报文
 	void s_PostRequest(char* addr, char* buffer);
 
-protected:
-	static DWORD WINAPI _CheckHeartbeatThread(LPVOID lpParam);//心跳线程函数
-
 public slots:
 void serviceDispatcher(PER_IO_CONTEXT1* pIoContext, char* buf);
 
 signals:
 void post_regist_ack(char* buffer);
+void post_signin_ack(char* buffer);
+void post_heartbeat_ack(char* buffer);
+void post_record_ack(char* buffer);
+void post_records_ack(char* buffer);
 
 private:
 	IocpServer* iocpServer;
-
-	HANDLE* HeartbeatThreadHandle;
 
 	//获取一条聊天记录
 	void s_GetRecord(PER_IO_CONTEXT1* pIoContext, char* buf);

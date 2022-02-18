@@ -115,7 +115,7 @@ void MyTitleBar::setTitleIcon(QString filePath, QSize IconSize) {
 void MyTitleBar::setTitleContent(QString titleContent, int titleFontSize) {
 	//设置标题字体
 	QFont font = m_pTitleContent->font();
-	font.setPointSize(titleFontSize);
+	font.setPixelSize(titleFontSize);
 	m_pTitleContent->setFont(font);
 	//设置标题内容
 	m_pTitleContent->setText(titleContent);
