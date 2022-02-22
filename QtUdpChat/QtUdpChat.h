@@ -28,15 +28,19 @@ public:
 
 	static int screenWidth;
 	static int screenHeight;
+	static int roomid;
+	static int userid;
 
 protected:
 	static DWORD WINAPI _CheckHeartbeatThread(LPVOID lpParam);//心跳线程函数
+	static char* hbBuffer;
 
 private:
 	QVBoxLayout* layout1;//总layout
 	QHBoxLayout* layout2;//中间layout
 	QVBoxLayout* layout3;//中间的中间layout;
 	QVBoxLayout* layout4;//
+	QVBoxLayout* layout5;//
 	QLabel* waitLabel;
 	QMovie* waitMovie;
 	QLabel* imgLabel;
@@ -65,10 +69,11 @@ private:
 	MyBorderContainer* myBorder;
 	MyTitleBar* m_titleBar;
 
-	char* addr;
+	static char* addr;
 	char* buffer;
+	static QString addrQString;
 
-	UdpChatService* udpChatService;
+	static UdpChatService* udpChatService;
 
 	//聊天室界面类
 	ChatRoom* chatRoom;
@@ -82,9 +87,11 @@ private slots:
 	void onButtonRegistClicked();
 	void onButtonBackClicked();
 	void onButtonSendRegistClicked();
+	void onButtonEnterClicked();
 
 	void doRegistAck(char* buffer);
 	void doSigninAck(char* buffer);
+	void doHeartbeatAck(char* buffer);
 
 	void doSignout();
 };

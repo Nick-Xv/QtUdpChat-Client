@@ -57,52 +57,6 @@ void UdpChatService::serviceDispatcher(PER_IO_CONTEXT1* pIoContext, char* buff) 
 	}
 }
 
-//心跳线程函数
-//每10秒发送一次心跳报文
-DWORD WINAPI UdpChatService::_CheckHeartbeatThread(LPVOID lpParam) {
-	UdpChatService* pParam = static_cast<UdpChatService*>(lpParam);
-	//每10秒发送一次
-	while (1) {
-		Sleep(10000);
-		//发送SENDTO
-		memset(buffer, 0, buffer_size);
-		buffer[0] = POST_REGIST;
-
-		unsigned short id_cur = 1, id_all = 1;
-		memcpy(&buffer[1], &(id_cur), sizeof(id_cur));
-		memcpy(&buffer[3], &(id_all), sizeof(id_all));
-		QString usernameString = nameInput->text();
-		QString passwordString = pwInput->text();
-		QString passwordCheckString = pwCheckInput->text();
-		if (usernameString.length() <= 1) {
-			//用户名太短了
-			QMessageBox::critical(NULL, "错误", "用户名太短了", QMessageBox::Yes, QMessageBox::Yes);
-			return;
-		}
-
-		if (passwordString != passwordCheckString) {
-			QMessageBox::critical(NULL, "错误", "两个密码不一致", QMessageBox::Yes, QMessageBox::Yes);
-			return;
-		}
-		QByteArray temp1;
-		temp1.append(usernameString);
-		const char* username = temp1.data();
-		QByteArray temp2;
-		temp2.append(passwordString);
-		const char* password = temp2.data();
-		memcpy(&buffer[5], username, strlen(username));
-		memcpy(&buffer[5 + strlen(username) + 1], password, strlen(password));
-
-		//显示转圈
-		waitMovie->start();
-		waitLabel->setVisible(true);
-		//发送请求
-		udpChatService->s_PostRequest(addr, buffer);
-		//
-	}
-	return 0;
-}
-
 //发送请求报文
 void UdpChatService::s_PostRequest(char* addr, char* buffer) {
 	iocpServer->SendDataTo(addr, buffer);

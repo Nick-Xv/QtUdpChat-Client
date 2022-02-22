@@ -97,6 +97,7 @@
   <ItemGroup>
     <ClCompile Include="ChatRoom.cpp" />
     <ClCompile Include="IocpServer.cpp" />
+    <ClCompile Include="MessageContainer.cpp" />
     <ClCompile Include="MyBorder.cpp" />
     <ClCompile Include="MyBorderContainer.cpp" />
     <ClCompile Include="mytitlebar.cpp" />
@@ -116,6 +117,7 @@
     <QtMoc Include="IocpServer.h" />
     <QtMoc Include="ChatRoom.h" />
     <QtMoc Include="MyBorderContainer.h" />
+    <ClInclude Include="MessageContainer.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>

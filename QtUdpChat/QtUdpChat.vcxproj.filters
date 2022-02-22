@@ -63,6 +63,9 @@
     <ClCompile Include="ChatRoom.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MessageContainer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="QtUdpChat.qrc">
@@ -71,6 +74,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MessageContainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
