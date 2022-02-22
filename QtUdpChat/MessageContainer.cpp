@@ -2,7 +2,7 @@
 
 
 
-MessageContainer::MessageContainer()
+MessageContainer::MessageContainer(QWidget* parent)
 {
 }
 

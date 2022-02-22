@@ -39,10 +39,10 @@ void MyTitleBar::initControl() {
 	m_pButtonClose = new QPushButton;
 
 	//设置按钮大小
-	m_pButtonMin->setFixedSize(QSize(BUTTON_WIDTH,BUTTON_HEIGHT));
-	m_pButtonRestore->setFixedSize(QSize(BUTTON_WIDTH, BUTTON_HEIGHT));
-	m_pButtonMax->setFixedSize(QSize(BUTTON_WIDTH, BUTTON_HEIGHT));
-	m_pButtonClose->setFixedSize(QSize(BUTTON_WIDTH, BUTTON_HEIGHT));
+	m_pButtonMin->setFixedSize(QSize(Config::BUTTON_WIDTH, Config::BUTTON_HEIGHT));
+	m_pButtonRestore->setFixedSize(QSize(Config::BUTTON_WIDTH, Config::BUTTON_HEIGHT));
+	m_pButtonMax->setFixedSize(QSize(Config::BUTTON_WIDTH, Config::BUTTON_HEIGHT));
+	m_pButtonClose->setFixedSize(QSize(Config::BUTTON_WIDTH, Config::BUTTON_HEIGHT));
 
 	//设置按钮图片
 	QIcon icon1,icon2,icon3,icon4;
@@ -79,7 +79,7 @@ void MyTitleBar::initControl() {
 	mylayout->setContentsMargins(5, 0, 0, 0);//边距
 	mylayout->setSpacing(0);//间距
 	m_pTitleContent->setSizePolicy(QSizePolicy::Expanding,QSizePolicy::Fixed);//伸缩策略
-	this->setFixedHeight(TITLE_HEIGHT);//高度
+	this->setFixedHeight(Config::TITLE_HEIGHT);//高度
 	this->setWindowFlags(Qt::FramelessWindowHint);//无边框
 }
 

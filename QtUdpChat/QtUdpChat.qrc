@@ -16,5 +16,6 @@
         <file>QtUdpChat-Big.qss</file>
         <file>resources/waiting.gif</file>
         <file>resources/wait2.gif</file>
+        <file>ChatRoom.qss</file>
     </qresource>
 </RCC>

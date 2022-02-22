@@ -18,6 +18,8 @@
 #include "UdpChatService.h"
 #include "ChatRoom.h"
 
+#include "Config.h"
+
 class QtUdpChat : public QWidget
 {
     Q_OBJECT
@@ -26,8 +28,6 @@ public:
     QtUdpChat(QWidget *parent = Q_NULLPTR);
 	~QtUdpChat();
 
-	static int screenWidth;
-	static int screenHeight;
 	static int roomid;
 	static int userid;
 
