@@ -84,7 +84,9 @@ ChatRoom::ChatRoom(QWidget *parent, UdpChatService* udpChatService) : QWidget(pa
 	widget_right->setContentsMargins(0, 0, 0, 0);
 	layout_right_in = new QVBoxLayout(widget_right);
 	layout_right_in->setMargin(0);
-
+	button_getRecords = new QPushButton;
+	button_getRecords->setText("获取聊天记录");
+	layout_right_in->addWidget(button_getRecords, 0, Qt::AlignCenter);
 	layout_right_in->addStretch();
 
 	scroll_right = new QScrollArea;
@@ -121,9 +123,12 @@ ChatRoom::ChatRoom(QWidget *parent, UdpChatService* udpChatService) : QWidget(pa
 
 	//发送按钮绑定
 	connect(button_send, &QPushButton::clicked, this, &ChatRoom::onButtonSendClicked);
+	//获取聊天记录按钮绑定
+	connect(button_getRecords, &QPushButton::clicked, this, &ChatRoom::getRecords);
 	//收到消息绑定
 	connect(udpChatService, &UdpChatService::post_record_ack, this, &ChatRoom::doPostrecordAck);
-
+	//收到消息记录绑定
+	connect(udpChatService, &UdpChatService::post_records_ack, this, &ChatRoom::doPostrecordsAck);
 }
 
 
@@ -196,25 +201,12 @@ void ChatRoom::onButtonSendClicked() {
 		//前端展示
 		edit_text->setText("");
 		qDebug() << test << endl;
-		QLabel* testLabel = new QLabel;
-		QLabel* nameLabel = new QLabel;
-		nameLabel->setText(userName);
-		styleSheetTemp = "font-size:";
-		styleSheetTemp.append(QString::number(Config::screenWidth / Config::font_ratio / 1.2));
-		styleSheetTemp.append("px;");
-		nameLabel->setStyleSheet(styleSheetTemp);
-		testLabel->setText(test);
-		styleSheetTemp = "background-color:orange;color:white;font-size:";
-		styleSheetTemp.append(QString::number(Config::screenWidth / Config::font_ratio * 1.5));
-		styleSheetTemp.append("px;border-radius:");
-		styleSheetTemp.append(QString::number(Config::screenWidth / Config::border_radius_ratio));
-		styleSheetTemp.append("px;margin-right:");
-		styleSheetTemp.append(QString::number(Config::screenWidth / Config::border_radius_ratio));
-		styleSheetTemp.append("px;");
-		testLabel->setStyleSheet(styleSheetTemp);
-		testLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-		layout_right_in->addWidget(nameLabel, 0, Qt::AlignRight);
-		layout_right_in->addWidget(testLabel, 0, Qt::AlignRight);
+		QString contentQString(contentChar);
+		MessageContainer* messageContainer = new MessageContainer(this, contentQString, atoi(useridChar), userName);
+		messageContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+		layout_right_in->addWidget(messageContainer, 0, Qt::AlignRight);
+		//message指针插入list
+		messageContainerList.push_back(messageContainer);
 		//延迟50毫秒等待插入widget完毕
 		Sleep(50);
 		//滚动到最下面
@@ -240,8 +232,8 @@ void ChatRoom::doPostrecordAck(char* buffer) {
 
 	//获取idrecords,roomid,content,userid,timestamp
 	int i = 2;
-	int beginPtr[5] = { 0 };
-	int endPtr[5] = { 0 };
+	int beginPtr[6] = { 0 };
+	int endPtr[6] = { 0 };
 	int num = 0;
 	beginPtr[num] = i;
 	while (buffer[i] != 0 || buffer[i + 1] != 0) {
@@ -264,24 +256,27 @@ void ChatRoom::doPostrecordAck(char* buffer) {
 	char* contentChar = new char[endPtr[2] - beginPtr[2] + 1];
 	char* useridChar = new char[endPtr[3] - beginPtr[3] + 1];
 	char* timestampChar = new char[endPtr[4] - beginPtr[4] + 1];
+	char* usernameChar = new char[endPtr[5] - beginPtr[5] + 1];
 
 	memset(idrecordsChar, 0, endPtr[0] - beginPtr[0] + 1);
 	memset(roomidChar, 0, endPtr[1] - beginPtr[1] + 1);
 	memset(contentChar, 0, endPtr[2] - beginPtr[2] + 1);
 	memset(useridChar, 0, endPtr[3] - beginPtr[3] + 1);
 	memset(timestampChar, 0, endPtr[4] - beginPtr[4] + 1);
+	memset(usernameChar, 0, endPtr[5] - beginPtr[5] + 1);
 
 	memcpy(idrecordsChar, &buffer[beginPtr[0]], endPtr[0] - beginPtr[0]);
 	memcpy(roomidChar, &buffer[beginPtr[1]], endPtr[1] - beginPtr[1]);
 	memcpy(contentChar, &buffer[beginPtr[2]], endPtr[2] - beginPtr[2]);
 	memcpy(useridChar, &buffer[beginPtr[3]], endPtr[3] - beginPtr[3]);
 	memcpy(timestampChar, &buffer[beginPtr[4]], endPtr[4] - beginPtr[4]);
+	memcpy(usernameChar, &buffer[beginPtr[5]], endPtr[5] - beginPtr[5]);
 
 	QString useridQString(useridChar);
 	QString contentQString(contentChar);
+	QString timestampQString(timestampChar);
+	QString usernameQString(usernameChar);
 	QScrollBar* vScrollBar = scroll_right->verticalScrollBar();
-	QLabel* testLabel = new QLabel;
-	QLabel* nameLabel = new QLabel;
 	//根据返回值进行操作
 	switch ((int)test) { 
 	case 0:
@@ -290,28 +285,36 @@ void ChatRoom::doPostrecordAck(char* buffer) {
 		break;
 	case 1:
 		//检测到有人发了一条消息
-		//前端展示
-		nameLabel->setText(useridQString);
-		styleSheetTemp = "font-size:";
-		styleSheetTemp.append(QString::number(Config::screenWidth / Config::font_ratio / 1.2));
-		styleSheetTemp.append("px;");
-		nameLabel->setStyleSheet(styleSheetTemp);
-		testLabel->setText(contentQString);
-		styleSheetTemp = "background-color:blue;color:white;font-size:";
-		styleSheetTemp.append(QString::number(Config::screenWidth / Config::font_ratio * 1.5));
-		styleSheetTemp.append("px;border-radius:");
-		styleSheetTemp.append(QString::number(Config::screenWidth / Config::border_radius_ratio));
-		styleSheetTemp.append("px;margin-right:");
-		styleSheetTemp.append(QString::number(Config::screenWidth / Config::border_radius_ratio));
-		styleSheetTemp.append("px;");
-		testLabel->setStyleSheet(styleSheetTemp);
-		testLabel->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
-		layout_right_in->addWidget(nameLabel, 0, Qt::AlignLeft);
-		layout_right_in->addWidget(testLabel, 0, Qt::AlignLeft);
-		//延迟50毫秒等待插入widget完毕
-		Sleep(50);
-		//滚动到最下面
-		vScrollBar->setValue(vScrollBar->maximum());
+		//如果是自己发的
+		if (userid == atoi(useridChar)) {
+			
+			list<MessageContainer*>::reverse_iterator iter;
+			for (iter = messageContainerList.rbegin(); iter != messageContainerList.rend(); iter++) {
+				MessageContainer* temp = *iter;
+				if (!temp->hasTime() && temp->getContent() == contentQString) {
+					temp->setInfo(timestampQString, atoi(idrecordsChar));
+					break;
+				}
+			}
+			//更新earliestID
+			if (earliestID == 0 || atoi(idrecordsChar) < earliestID) {
+				earliestID = atoi(idrecordsChar);
+			}
+
+		}
+		else {
+			//前端展示
+			MessageContainer* messageContainer = new MessageContainer(this, timestampQString, contentQString, atoi(useridChar), usernameQString, atoi(idrecordsChar), false);
+			messageContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+			layout_right_in->addWidget(messageContainer, 0, Qt::AlignLeft);
+			//message指针插入list
+			messageContainerList.push_back(messageContainer);
+			//延迟50毫秒等待插入widget完毕
+			Sleep(50);
+			//滚动到最下面
+			QScrollBar* vScrollBar = scroll_right->verticalScrollBar();
+			vScrollBar->setValue(vScrollBar->maximum());
+		}
 		break;
 	case 2:
 		//数据库错误
@@ -322,4 +325,145 @@ void ChatRoom::doPostrecordAck(char* buffer) {
 		qDebug() << "接收到未知的返回值" << endl;
 		break;
 	}
+}
+
+//处理收到的消息记录
+void ChatRoom::doPostrecordsAck(char* buffer) {
+	//输出返回值
+	char test;
+	memcpy(&test, &buffer[1], 1);
+	qDebug() << (int)test << endl;
+
+	//获取idrecords,roomid,content,userid,timestamp,username
+	int i = 2;
+	int beginPtr[120] = { 0 };
+	int endPtr[120] = { 0 };
+	int num = 0;
+	beginPtr[num] = i;
+	while (buffer[i] != 0 || buffer[i + 1] != 0) {
+		if (buffer[i] == 0) {
+			endPtr[num] = i;
+			beginPtr[++num] = i + 1;
+		}
+		i++;
+	}
+	endPtr[num] = i;
+
+	//没有收到聊天记录具体信息
+	if (beginPtr[1] == 0) {
+		qDebug() << "接收到空的聊天记录" << endl;
+		return;
+	}
+
+	char *idrecordsChar = nullptr, *roomidChar = nullptr, 
+		*contentChar = nullptr, *useridChar = nullptr, 
+		*timestampChar = nullptr, *usernameChar = nullptr;
+
+	QString useridQString(useridChar);
+	QString contentQString(contentChar);
+	QScrollBar* vScrollBar = scroll_right->verticalScrollBar();
+	QLabel* testLabel = new QLabel;
+	QLabel* nameLabel = new QLabel;
+	//根据返回值进行操作
+	switch ((int)test) {
+	case 0:
+		//数据错误
+		qDebug() << "接收到错误数据!!!" << endl;
+		break;
+	case 1:
+		//查询成功
+		for (int i = 0; i <= num; i++) {
+			int j = i % 6;
+			switch (j) {
+			case 0:
+				if (idrecordsChar != nullptr) delete idrecordsChar;
+				idrecordsChar = new char[endPtr[i] - beginPtr[i] + 1];
+				memset(idrecordsChar, 0, endPtr[i] - beginPtr[i] + 1);
+				memcpy(idrecordsChar, &buffer[beginPtr[i]], endPtr[i] - beginPtr[i]);
+				break;
+			case 1:
+				if (roomidChar != nullptr) delete roomidChar;
+				roomidChar = new char[endPtr[i] - beginPtr[i] + 1];
+				memset(roomidChar, 0, endPtr[i] - beginPtr[i] + 1);
+				memcpy(roomidChar, &buffer[beginPtr[i]], endPtr[i] - beginPtr[i]);
+				break;
+			case 2:
+				if (contentChar != nullptr) delete contentChar;
+				contentChar = new char[endPtr[i] - beginPtr[i] + 1];
+				memset(contentChar, 0, endPtr[i] - beginPtr[i] + 1);
+				memcpy(contentChar, &buffer[beginPtr[i]], endPtr[i] - beginPtr[i]);
+				break;
+			case 3:
+				if (useridChar != nullptr) delete useridChar;
+				useridChar = new char[endPtr[i] - beginPtr[i] + 1];
+				memset(useridChar, 0, endPtr[i] - beginPtr[i] + 1);
+				memcpy(useridChar, &buffer[beginPtr[i]], endPtr[i] - beginPtr[i]);
+				break;
+			case 4:
+				if (timestampChar != nullptr) delete timestampChar;
+				timestampChar = new char[endPtr[i] - beginPtr[i] + 1];
+				memset(timestampChar, 0, endPtr[i] - beginPtr[i] + 1);
+				memcpy(timestampChar, &buffer[beginPtr[i]], endPtr[i] - beginPtr[i]);
+				break;
+			case 5:
+				if (usernameChar != nullptr) delete usernameChar;
+				usernameChar = new char[endPtr[i] - beginPtr[i] + 1];
+				memset(usernameChar, 0, endPtr[i] - beginPtr[i] + 1);
+				memcpy(usernameChar, &buffer[beginPtr[i]], endPtr[i] - beginPtr[i]);
+				//获取完整记录以后，进行一条消息的前端显示
+				QString contentQString(contentChar);
+				QString usernameQString(usernameChar);
+				QString timestampQString(timestampChar);
+				bool mine = false;
+				if (this->userid == atoi(useridChar)) mine = true;
+				MessageContainer* messageContainer = new MessageContainer(this, timestampQString, contentQString, atoi(useridChar), usernameQString, atoi(idrecordsChar), mine); 
+				messageContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
+				//如果是自己发的
+				if (this->userid == atoi(useridChar)) {
+					layout_right_in->insertWidget(2, messageContainer, 0, Qt::AlignRight);
+				}
+				else {
+					layout_right_in->insertWidget(2, messageContainer, 0, Qt::AlignLeft);
+				}
+				//message指针插入list
+				messageContainerList.push_front(messageContainer);
+
+				//更新earliestID
+				if (earliestID == 0 || atoi(idrecordsChar) < earliestID) {
+					earliestID = atoi(idrecordsChar);
+				}
+				break;
+			}
+		}
+		break;
+	case 2:
+		//数据库错误
+		qDebug() << "数据库查询错误" << endl;
+		break;
+	default:
+		//未知返回值
+		qDebug() << "接收到未知的返回值" << endl;
+		break;
+	}
+}
+
+void ChatRoom::getRecords() {
+	//获取部分聊天记录
+	memset(buffer, 0, Config::buffer_size);
+	buffer[0] = GET_RECORD;
+	unsigned short id_cur = 1, id_all = 1;
+	memcpy(&buffer[1], &(id_cur), sizeof(id_cur));
+	memcpy(&buffer[3], &(id_all), sizeof(id_all));
+
+	QString roomidString = QString::number(roomid);
+	QString idrecordsString = QString::number(earliestID);
+	QByteArray temp1;
+	temp1.append(roomidString);
+	const char* roomidChar = temp1.data();
+	QByteArray temp2;
+	temp2.append(idrecordsString);
+	const char* idrecordsChar = temp2.data();
+	memcpy(&buffer[5], roomidChar, strlen(roomidChar));
+	memcpy(&buffer[5 + strlen(roomidChar) + 1], idrecordsChar, strlen(idrecordsChar));
+	udpChatService->s_PostRequest(addr, buffer);
 }

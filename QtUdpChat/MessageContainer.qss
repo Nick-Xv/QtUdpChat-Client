@@ -1,0 +1,4 @@
+QLabel#TimestampTag
+{
+color:grey;
+}

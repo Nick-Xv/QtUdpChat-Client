@@ -17,6 +17,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 {
 	//心跳句柄
 	HeartbeatThreadHandle = new HANDLE;
+	*HeartbeatThreadHandle = INVALID_HANDLE_VALUE;
 
 	this->resize(Config::screenWidth / 3, Config::screenHeight / 2);
 	//去除标题栏
@@ -139,7 +140,7 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 
 	waitLabel = new QLabel();
 	waitMovie = new QMovie(":/test/resources/wait2.gif");
-	waitMovie->setScaledSize(QSize(Config::screenWidth / 100, Config::screenWidth / 100));
+	waitMovie->setScaledSize(QSize(Config::screenWidth / Config::waitmovie_ratio, Config::screenWidth / Config::waitmovie_ratio));
 	waitLabel->setMovie(waitMovie);
 	//waitLabel->setStyleSheet("border:1px solid rgb(40,222,235); height:30px");
 	//waitLabel->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
@@ -472,6 +473,7 @@ void QtUdpChat::doSigninAck(char* buffer) {
 		temp.append(serverAddress);
 		addr = temp.data();
 		chatRoom->setRoomValues(roomid, userid, nameInput->text(), addr); 
+		chatRoom->getRecords();
 		chatRoom->show();
 		this->hide();
 		//打开心跳发送线程

@@ -72,6 +72,9 @@
     <ClCompile Include="Config.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MemberContainer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <QtRcc Include="QtUdpChat.qrc">
@@ -83,6 +86,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Config.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MemberContainer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -100,6 +106,9 @@
       <Filter>Resource Files</Filter>
     </None>
     <None Include="ChatRoom.qss">
+      <Filter>Resource Files</Filter>
+    </None>
+    <None Include="MessageContainer.qss">
       <Filter>Resource Files</Filter>
     </None>
   </ItemGroup>

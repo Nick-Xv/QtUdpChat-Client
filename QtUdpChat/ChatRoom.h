@@ -11,13 +11,18 @@
 #include <QDebug>
 #include <QScrollBar>
 #include <QTime>
+#include <list>
+#include <algorithm>
 
 #include "mytitlebar.h"
 #include "MyBorderContainer.h"
 #include "UdpChatService.h"
 #include "MessageContainer.h"
+#include "MemberContainer.h"
 
 #include "Config.h"
+
+using std::list;
 class ChatRoom : public QWidget
 {
 	Q_OBJECT
@@ -26,6 +31,7 @@ public:
 	~ChatRoom();
 
 	void setRoomValues(int roomid, int userid, QString userName, char* addr);
+	void getRecords();
 
 private:
 	//自定义延时函数
@@ -58,11 +64,20 @@ private:
 	QPushButton* button_signout;//登出按钮
 	QPushButton* button_send;//发送按钮
 
+	QPushButton* button_getRecords;//获取聊天记录按钮
+
 	QTextEdit* edit_text;//文本编辑框
 
 	QString userName;//本人的用户名
 	int userid;//本人的id
 	int roomid;//当前聊天室的id
+
+	int earliestID = 0;//记录当前最老的一条消息id
+
+	//记录消息组件的指针
+	list<MessageContainer*> messageContainerList;
+
+	//list<MemberContainer*> memberContainerList;
 
 private slots:
 	void onButtonMaxClicked();
@@ -71,4 +86,5 @@ private slots:
 	void onButtonSendClicked();
 
 	void doPostrecordAck(char* buffer);
+	void doPostrecordsAck(char* buffer);
 };

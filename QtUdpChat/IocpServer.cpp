@@ -294,7 +294,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	{
 		qDebug() << "Udp WSASocket() 完成" << endl;
 	}
-
+	
 	//将Listen Socket绑定至完成端口中
 	if (nullptr == CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pListenContext->m_Socket), m_hIOCompletionPort, reinterpret_cast<ULONG_PTR>(m_pListenContext), 0))
 	{
@@ -306,7 +306,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	{
 		qDebug() << "Listen Socket绑定完成端口 完成." << endl;
 	}
-
+	
 	//填充地址信息
 	ZeroMemory((char *)&ServerAddress, sizeof(ServerAddress));
 	ServerAddress.sin_family = AF_INET;
@@ -314,6 +314,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	ServerAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	ServerAddress.sin_port = htons(m_nPort);
 
+	
 	// 绑定地址和端口
 	if (SOCKET_ERROR == bind(m_pListenContext->m_Socket, (struct sockaddr *) &ServerAddress, sizeof(ServerAddress)))
 	{
@@ -324,7 +325,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	{
 		qDebug() << "bind() 完成." << endl;
 	}
-
+	
 	// 绑定UDP地址和端口
 	if (SOCKET_ERROR == bind(m_pListenContextUdp->m_Socket, (struct sockaddr *) &ServerAddress, sizeof(ServerAddress)))
 	{
@@ -335,7 +336,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	{
 		qDebug() << "UDP bind() 完成." << endl;
 	}
-
+	
 	//将Udp Listen Socket绑定至完成端口中
 	if (nullptr == CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pListenContextUdp->m_Socket), m_hIOCompletionPort, reinterpret_cast<ULONG_PTR>(m_pListenContextUdp), 0))
 	{
@@ -347,6 +348,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	{
 		qDebug() << "Udp Listen Socket绑定完成端口 完成." << endl;
 	}
+	
 	//开始重叠recvfrom
 	qDebug() << "马上开始recv" << endl;
 	qDebug() << m_nThreads - MAX_POST_ACCEPT1 << endl;
@@ -659,7 +661,7 @@ bool IocpServer::CIOCPModel1::_PostSendTo(char* addr, char* buffer) {
 
 	pSendToIoContext->remoteAddr.sin_family = AF_INET;
 	pSendToIoContext->remoteAddr.sin_addr.S_un.S_addr = inet_addr(addr);
-	pSendToIoContext->remoteAddr.sin_port = htons(1000);
+	pSendToIoContext->remoteAddr.sin_port = htons(1001);
 	pSendToIoContext->remoteAddrLen = sizeof(pSendToIoContext->remoteAddr);
 
 	pSendToIoContext->m_OpType = SENDTO_POST;

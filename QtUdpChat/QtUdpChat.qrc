@@ -17,5 +17,7 @@
         <file>resources/waiting.gif</file>
         <file>resources/wait2.gif</file>
         <file>ChatRoom.qss</file>
+        <file>MessageContainer.qss</file>
+        <file>resources/默认头像ICON.png</file>
     </qresource>
 </RCC>

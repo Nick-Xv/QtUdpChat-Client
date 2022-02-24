@@ -68,6 +68,14 @@
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Link>
+      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <ClCompile>
+      <AdditionalIncludeDirectories>D:\QT\5.12.6\msvc2015_64\include;D:\mysql-8.0.27-winx64\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+    </ClCompile>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)' == 'Debug|x64'" Label="Configuration">
     <ClCompile>
       <TreatWChar_tAsBuiltInType>true</TreatWChar_tAsBuiltInType>
@@ -98,6 +106,7 @@
     <ClCompile Include="ChatRoom.cpp" />
     <ClCompile Include="Config.cpp" />
     <ClCompile Include="IocpServer.cpp" />
+    <ClCompile Include="MemberContainer.cpp" />
     <ClCompile Include="MessageContainer.cpp" />
     <ClCompile Include="MyBorder.cpp" />
     <ClCompile Include="MyBorderContainer.cpp" />
@@ -120,10 +129,12 @@
     <QtMoc Include="MyBorderContainer.h" />
     <ClInclude Include="Config.h" />
     <QtMoc Include="MessageContainer.h" />
+    <ClInclude Include="MemberContainer.h" />
     <ClInclude Include="resource.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="ChatRoom.qss" />
+    <None Include="MessageContainer.qss" />
     <None Include="MyTitle.qss" />
     <None Include="QtUdpChat-Big.qss" />
     <None Include="QtUdpChat.qss" />

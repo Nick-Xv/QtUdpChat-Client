@@ -20,6 +20,24 @@ public:
 	static const int window_ratio = 10;
 	//导航栏高度
 	static const int title_ratio = 250;
+	//timestamp文字大小
+	static const int timestamp_font_ratio = 100;
+	//timestamp margin
+	static const int timestamp_margin = 68 * 2;
+	//nametag margin
+	static const int nametag_margin = 68 * 2;
+	//nametag 文字大小
+	static const int nametag_font_ratio = 80;
+	//content文字大小
+	static const int content_font_ratio = 80;
+	//content margin
+	static const int content_margin = 68 * 2;
+
+	//waitmovie
+	static const int waitmovie_ratio = 100;
+
+	//content_width_ratio
+	static const int content_width_ratio = 4;
 
 	//缓冲区大小
 	static const int buffer_size = 8192;
