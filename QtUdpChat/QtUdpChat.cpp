@@ -196,19 +196,11 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	connect(buttonSendRegist, &QPushButton::clicked, this, &QtUdpChat::onButtonSendRegistClicked);
 	connect(buttonEnter, &QPushButton::clicked, this, &QtUdpChat::onButtonEnterClicked);
 
-	//启动完成端口服务
-	udpChatService = new UdpChatService();
-
 	//加载聊天室界面
 	chatRoom = new ChatRoom(Q_NULLPTR, udpChatService);
 
-	//绑定服务信号槽
-	//注册
-	connect(udpChatService, &UdpChatService::post_regist_ack, this, &QtUdpChat::doRegistAck);
-	//登录
-	connect(udpChatService, &UdpChatService::post_signin_ack, this, &QtUdpChat::doSigninAck);
-	//心跳
-	connect(udpChatService, &UdpChatService::post_heartbeat_ack, this, &QtUdpChat::doHeartbeatAck);
+	//启动完成端口服务
+	udpChatService = new UdpChatService(this, chatRoom);
 }
 
 QtUdpChat::~QtUdpChat() {
@@ -244,6 +236,7 @@ void QtUdpChat::loadStyleSheet(const QString &sheetName) {
 	}
 }
 
+//窗口最大化按钮
 void QtUdpChat::onButtonMaxClicked() {
 	QRect desktopRect = QApplication::desktop()->availableGeometry();
 	QRect FactRect = QRect(desktopRect.x() - 3, desktopRect.y() - 3, desktopRect.width() + 6, desktopRect.height() + 6);
@@ -251,10 +244,12 @@ void QtUdpChat::onButtonMaxClicked() {
 	myBorder->DrawBorder();
 }
 
+//窗口还原按钮
 void QtUdpChat::onButtonRestoreClicked() {
 	myBorder->DrawBorder();
 }
 
+//切换注册页面按钮
 void QtUdpChat::onButtonRegistClicked() {
 	roomLabel->setVisible(false);
 	roomInput->setVisible(false);
@@ -267,6 +262,7 @@ void QtUdpChat::onButtonRegistClicked() {
 	buttonSendRegist->setVisible(true);
 }
 
+//返回按钮
 void QtUdpChat::onButtonBackClicked() {
 	roomLabel->setVisible(true);
 	roomInput->setVisible(true);
@@ -279,97 +275,129 @@ void QtUdpChat::onButtonBackClicked() {
 	buttonSendRegist->setVisible(false);
 }
 
+//发送注册请求按钮
 void QtUdpChat::onButtonSendRegistClicked() {
+	//参数vector
+	vector<char*> args;
+
 	memset(addr, 0, 16);
 	QString serverAddress = serverAddrInput->text();
 	if (serverAddress.length() < 8) {
-		QMessageBox::critical(NULL, "错误", "服务器地址未输入", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+		showSimpleMessageBox(0, "错误", "服务器地址未输入!");
 		return;
 	}
 	QByteArray temp;
 	temp.append(serverAddress);
 	addr = temp.data();
 
-	buffer = new char[Config::buffer_size];
-	memset(buffer, 0, Config::buffer_size);
-	buffer[0] = POST_REGIST;
-	
+	//参数1
+	char arg1[2];
+	arg1[0] = POST_REGIST;
+	arg1[1] = 0;
+	args.push_back(arg1);
+
+	//参数2.3
 	unsigned short id_cur = 1, id_all = 1;
-	memcpy(&buffer[1], &(id_cur), sizeof(id_cur));
-	memcpy(&buffer[3], &(id_all), sizeof(id_all));
+	char arg2[2];
+	arg2[0] = id_cur;
+	arg2[1] = 0;
+	args.push_back(arg2);
+	char arg3[2];
+	arg3[0] = id_all;
+	arg3[1] = 0;
+	args.push_back(arg3);
+
 	QString usernameString = nameInput->text();
 	QString passwordString = pwInput->text();
 	QString passwordCheckString = pwCheckInput->text();
 	if (usernameString.length() <= 1) {
 		//用户名太短了
-		QMessageBox::critical(NULL, "错误", "用户名太短了", QMessageBox::Yes, QMessageBox::Yes);
+		showSimpleMessageBox(0, "错误", "用户名太短了!");
 		return;
 	}
 
 	if (passwordString != passwordCheckString) {
-		QMessageBox::critical(NULL, "错误", "两个密码不一致", QMessageBox::Yes, QMessageBox::Yes);
+		showSimpleMessageBox(0, "错误", "密码不一致!");
 		return;
 	}
+
+	//参数4
 	QByteArray temp1;
 	temp1.append(usernameString);
-	const char* username = temp1.data();
+	char* username = temp1.data();
+	args.push_back(username);
+
+	//参数5
 	QByteArray temp2;
 	temp2.append(passwordString);
-	const char* password = temp2.data();
-	memcpy(&buffer[5], username, strlen(username));
-	memcpy(&buffer[5 + strlen(username) + 1], password, strlen(password));
+	char* password = temp2.data();
+	args.push_back(password);
 
 	//显示转圈
 	waitMovie->start();
 	waitLabel->setVisible(true);
 	//发送请求
-	udpChatService->s_PostRequest(addr, buffer);
+	udpChatService->s_PostRequest(addr, args);
 }
 
 //用户登录按钮
 void QtUdpChat::onButtonEnterClicked() {
+	//参数vector
+	vector<char*> args;
+
 	QtUdpChat::addrQString = serverAddrInput->text();
 	memset(addr, 0, 16);
 	QString serverAddress = serverAddrInput->text();
 	if (serverAddress.length() < 8) {
-		QMessageBox::critical(NULL, "错误", "服务器地址未输入", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+		showSimpleMessageBox(0, "错误", "服务器地址未输入!");
 		return;
 	}
 	QByteArray temp;
 	temp.append(serverAddress);
 	addr = temp.data();
 
-	qDebug() << addr << endl;
+	//参数1
+	char arg1[2];
+	arg1[0] = CHECK_PASSWORD;
+	arg1[1] = 0;
+	args.push_back(arg1);
 
-	buffer = new char[Config::buffer_size];
-	memset(buffer, 0, Config::buffer_size);
-	buffer[0] = CHECK_PASSWORD;
-
+	//参数2.3
 	unsigned short id_cur = 1, id_all = 1;
-	memcpy(&buffer[1], &(id_cur), sizeof(id_cur));
-	memcpy(&buffer[3], &(id_all), sizeof(id_all));
+	char arg2[2];
+	arg2[0] = id_cur;
+	arg2[1] = 0;
+	args.push_back(arg2);
+	char arg3[2];
+	arg3[0] = id_all;
+	arg3[1] = 0;
+	args.push_back(arg3);
 
 	QString usernameString = nameInput->text();
 	QString passwordString = pwInput->text();
 	if (usernameString.length() <= 1) {
 		//用户名太短了
-		QMessageBox::critical(NULL, "错误", "用户名太短了", QMessageBox::Yes, QMessageBox::Yes);
+		showSimpleMessageBox(0, "错误", "用户名太短了!");
 		return;
 	}
+
+	//参数4
 	QByteArray temp1;
 	temp1.append(usernameString);
-	const char* username = temp1.data();
+	char* username = temp1.data();
+	args.push_back(username);
+
+	//参数5
 	QByteArray temp2;
 	temp2.append(passwordString);
-	const char* password = temp2.data();
-	memcpy(&buffer[5], username, strlen(username));
-	memcpy(&buffer[5 + strlen(username) + 1], password, strlen(password));
+	char* password = temp2.data();
+	args.push_back(password);
 
 	//显示转圈
 	waitMovie->start();
 	waitLabel->setVisible(true);
 	//发送请求
-	udpChatService->s_PostRequest(addr, buffer);
+	udpChatService->s_PostRequest(addr, args);
 }
 
 //退出登录
@@ -378,43 +406,14 @@ void QtUdpChat::doSignout() {
 	RELEASE(HeartbeatThreadHandle);
 }
 
-void QtUdpChat::doRegistAck(char* buffer) {
-	//输出返回值
-	char test;
-	memcpy(&test, &buffer[1], 1);
-	qDebug() << (int)test << endl;
+//接收到注册ACK
+void QtUdpChat::doRegistAck(vector<char*> v) {
+	onButtonBackClicked();
 	
-	//根据返回值进行操作
-	switch ((int)test) {
-	case 0:
-		//数据错误
-		QMessageBox::critical(NULL, "错误", "数据错误", QMessageBox::Yes, QMessageBox::Yes);
-		break;
-	case 1:
-		//用户名已存在
-		QMessageBox::critical(NULL, "错误", "用户名已存在", QMessageBox::Yes, QMessageBox::Yes);
-		break;
-	case 2:
-		//数据库错误
-		QMessageBox::critical(NULL, "错误", "数据库错误", QMessageBox::Yes, QMessageBox::Yes);
-		break;
-	case 3:
-		//注册成功
-		QMessageBox::information(NULL, "信息", "注册成功！", QMessageBox::Yes, QMessageBox::Yes);
-		//此处跳转到登录页面
-		onButtonBackClicked();
-		break;
-	default:
-		//未知返回值
-		QMessageBox::critical(NULL, "错误", "未知返回值错误", QMessageBox::Yes, QMessageBox::Yes);
-		break;
-	}
-	//停止转圈
-	waitMovie->stop();
-	waitLabel->setVisible(false);
 }
 
-void QtUdpChat::doSigninAck(char* buffer) {
+//接收到登录ACK
+void QtUdpChat::doSigninAck(vector<char*> v) {
 	//输出返回值
 	char test;
 	memcpy(&test, &buffer[1], 1);
@@ -448,27 +447,27 @@ void QtUdpChat::doSigninAck(char* buffer) {
 	switch ((int)test) {
 	case 0:
 		//数据错误
-		QMessageBox::critical(NULL, "错误", "数据错误", QMessageBox::Yes, QMessageBox::Yes);
+		showSimpleMessageBox(0, "错误", "数据错误!");
 		break;
 	case 1:
 		//密码正确，首先检查是否有房间号
 		roomID = roomInput->text();
 		if (roomID.length() < 1) {
-			QMessageBox::information(NULL, "信息", "请输入房间号", QMessageBox::Yes, QMessageBox::Yes);
+			showSimpleMessageBox(0, "错误", "请输入房间号!");
 			break;
 		}
 		roomid = roomID.toInt();
 		if (roomid <= 0 || roomid >= 1001) {
-			QMessageBox::information(NULL, "信息", "请输入正确的房间号（1-1000）", QMessageBox::Yes, QMessageBox::Yes);
+			showSimpleMessageBox(0, "错误", "请输入正确的房间号1-1000!");
 			break;
 		}
 		//检查userid是否正常
 		if (userid == 0) {//不正常
-			QMessageBox::critical(NULL, "错误", "用户ID获取失败", QMessageBox::Yes, QMessageBox::Yes);
+			showSimpleMessageBox(0, "错误", "获取用户ID失败!");
 			break;
 		}
 		//可以继续
-		QMessageBox::information(NULL, "信息", "登录成功", QMessageBox::Yes, QMessageBox::Yes);
+		showSimpleMessageBox(1, "信息", "登录成功!");
 		//进入聊天室页面
 		temp.append(serverAddress);
 		addr = temp.data();
@@ -481,15 +480,15 @@ void QtUdpChat::doSigninAck(char* buffer) {
 		break;
 	case 2:
 		//数据库错误
-		QMessageBox::critical(NULL, "错误", "数据库错误", QMessageBox::Yes, QMessageBox::Yes);
+		showSimpleMessageBox(0, "错误", "数据库错误!");
 		break;
 	case 3:
 		//密码错误
-		QMessageBox::critical(NULL, "错误", "密码错误！", QMessageBox::Yes, QMessageBox::Yes);
+		showSimpleMessageBox(0, "错误", "密码错误!");
 		break;
 	default:
 		//未知返回值
-		QMessageBox::critical(NULL, "错误", "未知返回值错误", QMessageBox::Yes, QMessageBox::Yes);
+		showSimpleMessageBox(0,"错误","未知返回值!");
 		break;
 	}
 	//停止转圈
@@ -497,7 +496,8 @@ void QtUdpChat::doSigninAck(char* buffer) {
 	waitLabel->setVisible(false);
 }
 
-void QtUdpChat::doHeartbeatAck(char* buffer) {
+//接收到心跳ACK
+void QtUdpChat::doHeartbeatAck(vector<char*> v) {
 	//输出返回值
 	char test;
 	memcpy(&test, &buffer[1], 1);
@@ -509,37 +509,69 @@ void QtUdpChat::doHeartbeatAck(char* buffer) {
 DWORD WINAPI QtUdpChat::_CheckHeartbeatThread(LPVOID lpParam) {
 	//每10秒发送一次
 	do {
-		//发送SENDTO
-		memset(hbBuffer, 0, Config::buffer_size);
-		hbBuffer[0] = CHECK_HEARTBEAT;
+		//参数vector
+		vector<char*> args;
+
+		//参数1
+		char arg1[2];
+		arg1[0] = CHECK_HEARTBEAT;
+		arg1[1] = 0;
+		args.push_back(arg1);
+
+		//参数2.3
 		unsigned short id_cur = 1, id_all = 1;
-		memcpy(&hbBuffer[1], &(id_cur), sizeof(id_cur));
-		memcpy(&hbBuffer[3], &(id_all), sizeof(id_all));
+		char arg2[2];
+		arg2[0] = id_cur;
+		arg2[1] = 0;
+		args.push_back(arg2);
+		char arg3[2];
+		arg3[0] = id_all;
+		arg3[1] = 0;
+		args.push_back(arg3);
 
 		QString useridString = QString::number(userid);
 		QString roomidString = QString::number(roomid);
 
+		//参数4
 		QByteArray temp1;
 		temp1.append(useridString);
-		const char* useridtemp = temp1.data();
+		char* useridChar = temp1.data();
+		args.push_back(useridChar);
+
+		//参数5
 		QByteArray temp2;
 		temp2.append(roomidString);
-		const char* roomidtemp = temp2.data();
-		memcpy(&hbBuffer[5], useridtemp, strlen(useridtemp));
-		memcpy(&hbBuffer[5 + strlen(useridtemp) + 1], roomidtemp, strlen(roomidtemp));
+		char* roomidChar = temp2.data();
+		args.push_back(roomidChar);
 
-		//发送请求
+		//传参发送
 		memset(addr, 0, 16);
 		QString serverAddress = addrQString;
 		QByteArray temp;
 		temp.append(serverAddress);
 		addr = temp.data();
-		udpChatService->s_PostRequest(addr, hbBuffer);
-		qDebug() << QtUdpChat::addr << endl;
+		udpChatService->s_PostRequest(addr, args);
 
 		//停10秒
 		Sleep(10000);
 	} 
 	while (1);
 	return 0;
+}
+
+void QtUdpChat::stopWaiting() {
+	//停止转圈
+	waitMovie->stop();
+	waitLabel->setVisible(false);
+}
+
+void QtUdpChat::showSimpleMessageBox(int type, string title, string content) {
+	switch (type) {
+	case 0://错误
+		QMessageBox::critical(NULL, QString::fromStdString(title), QString::fromStdString(content), QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	case 1://信息
+		QMessageBox::information(NULL, QString::fromStdString(title), QString::fromStdString(content), QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	}
 }

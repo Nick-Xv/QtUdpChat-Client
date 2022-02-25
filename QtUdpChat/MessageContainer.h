@@ -1,5 +1,9 @@
 #pragma once
 #pragma execution_character_set("utf-8")
+/*
+MessageContainer
+展示一条消息的组件
+*/
 #include <QWidget>
 #include <QLabel>
 #include <QMovie>

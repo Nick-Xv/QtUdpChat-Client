@@ -31,12 +31,6 @@
     <QtMoc Include="MyBorderContainer.h">
       <Filter>Header Files</Filter>
     </QtMoc>
-    <QtMoc Include="UdpChatService.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="IocpServer.h">
-      <Filter>Header Files</Filter>
-    </QtMoc>
     <QtMoc Include="ChatRoom.h">
       <Filter>Header Files</Filter>
     </QtMoc>
@@ -89,6 +83,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MemberContainer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="IocpServer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="UdpChatService.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

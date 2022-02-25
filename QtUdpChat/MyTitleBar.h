@@ -1,5 +1,9 @@
 ﻿#pragma once
 #pragma execution_character_set("utf-8")
+/*
+MyTitleBar
+自定义导航栏组件
+*/
 #include <QWidget>
 #include <QLabel>
 #include <QPushButton>

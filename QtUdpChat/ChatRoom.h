@@ -1,5 +1,15 @@
 #pragma once
 #pragma execution_character_set("utf-8")
+/*
+ChatRoom聊天室界面类
+包含窗体布局和窗体组件
+1.展示窗体
+
+2.接收来自UdpChatService的信号
+3.根据信号内的数据进行信息显示
+
+2.将窗体上的用户操作产生的数据通过信号发给UdpChatService
+*/
 #include <QtWidgets/QWidget>
 #include <QApplication>
 #include <QDesktopWidget>
@@ -12,6 +22,7 @@
 #include <QScrollBar>
 #include <QTime>
 #include <list>
+#include <vector>
 #include <algorithm>
 
 #include "mytitlebar.h"
@@ -32,6 +43,9 @@ public:
 
 	void setRoomValues(int roomid, int userid, QString userName, char* addr);
 	void getRecords();
+
+	void doPostrecordAck(vector<char*> c);
+	void doPostrecordsAck(vector<char*> c);
 
 private:
 	//自定义延时函数
@@ -84,7 +98,4 @@ private slots:
 	void onButtonRestoreClicked();
 
 	void onButtonSendClicked();
-
-	void doPostrecordAck(char* buffer);
-	void doPostrecordsAck(char* buffer);
 };

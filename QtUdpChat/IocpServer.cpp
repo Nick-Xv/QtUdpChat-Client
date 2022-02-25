@@ -1,4 +1,5 @@
 ﻿#include "IocpServer.h"
+//#include "UdpChatService.h"
 
 //每个处理器上产生多少个线程()
 const int WORKER_THREADS_PER_PROCESSOR1 = 2;
@@ -16,6 +17,11 @@ const int MAX_POST_ACCEPT1 = (THREAD_NUMBER-2) / 2;
 #define RELEASE_HANDLE(x) {if((x)!=nullptr&&(x)!=INVALID_HANDLE_VALUE){CloseHandle(x);(x)=nullptr;}}
 //释放Socket宏
 #define RELEASE_SOCKET(x) {if((x)!=INVALID_SOCKET){closesocket(x);x=INVALID_SOCKET;}}
+
+int __stdcall CALLBACKFun(pFunc pFun) {
+	pCallBack = pFun;
+	return 0;
+}
 
 char*** createBufferArray() {
 	char*** arr;
@@ -63,9 +69,9 @@ IocpServer::CIOCPModel1::CIOCPModel1(IocpServer* parent) :
 	m_pListenContextUdp(nullptr)
 {
 	this->parent = parent;
-	qRegisterMetaType<SERVICE_TYPE>("SERVICE_TYPE");
-	qRegisterMetaType<PER_IO_CONTEXT1>("PER_IO_CONTEXT1");
-	qRegisterMetaType<WSABUF>("WSABUF");
+	//qRegisterMetaType<SERVICE_TYPE>("SERVICE_TYPE");
+	//qRegisterMetaType<PER_IO_CONTEXT1>("PER_IO_CONTEXT1");
+	//qRegisterMetaType<WSABUF>("WSABUF");
 	bufferPtr = createBufferArray();
 }
 
@@ -85,7 +91,7 @@ DWORD WINAPI IocpServer::CIOCPModel1::_WorkerThread(LPVOID lpParam) {
 	//当前缓冲区编号
 	int curBufNo = 0;
 	//显示信息
-	qDebug() << "workerthread start " << nThreadNo << endl;
+	cout << "workerthread start " << nThreadNo << endl;
 
 	OVERLAPPED* pOverlapped = nullptr;
 	PER_SOCKET_CONTEXT1* pSocketContext = nullptr;
@@ -113,12 +119,12 @@ DWORD WINAPI IocpServer::CIOCPModel1::_WorkerThread(LPVOID lpParam) {
 		else {
 			//读取传入的参数
 			PER_IO_CONTEXT1* pIoContext = CONTAINING_RECORD(pOverlapped, PER_IO_CONTEXT1, m_Overlapped);
-			//qDebug() << pIoContext->m_OpType << endl;
+			//cout << pIoContext->m_OpType << endl;
 			//判断是否有客户端断开了
 			if ((0 == dwBytesTransfered) && (RECV_POST == pIoContext->m_OpType || SEND_POST == pIoContext->m_OpType))
 			{
 				//显示信息
-				qDebug() << "客户端 " << inet_ntoa(pSocketContext->m_ClientAddr.sin_addr) << ":" << ntohs(pSocketContext->m_ClientAddr.sin_port) << "断开连接." << endl;
+				cout << "客户端 " << inet_ntoa(pSocketContext->m_ClientAddr.sin_addr) << ":" << ntohs(pSocketContext->m_ClientAddr.sin_port) << "断开连接." << endl;
 				//释放资源
 				pIOCPModel->_RemoveContext(pSocketContext);
 				continue;
@@ -137,7 +143,7 @@ DWORD WINAPI IocpServer::CIOCPModel1::_WorkerThread(LPVOID lpParam) {
 				}
 				break;
 				case SEND_POST: {
-					qDebug()<<"SEND 数据发出"<<endl;
+					cout << "SEND 数据发出" << endl;
 				}
 				break;
 				case RECVFROM_POST: {
@@ -145,11 +151,11 @@ DWORD WINAPI IocpServer::CIOCPModel1::_WorkerThread(LPVOID lpParam) {
 				}
 				break;
 				case SENDTO_POST: {
-					qDebug() << "SEND_TO 数据发出" << endl;
+					cout << "SEND_TO 数据发出" << endl;
 				}
 				break;
 				default:
-				qDebug() << "_WorkThread中的 pIoContext->m_OpType 参数异常" << endl;
+					cout << "_WorkThread中的 pIoContext->m_OpType 参数异常" << endl;
 				break;
 				}
 				//当前缓冲区第二维指针+1
@@ -157,7 +163,7 @@ DWORD WINAPI IocpServer::CIOCPModel1::_WorkerThread(LPVOID lpParam) {
 			}
 		}
 	}
-	qDebug() << "工作者线程 " << nThreadNo << "号退出 " << endl;
+	cout << "工作者线程 " << nThreadNo << "号退出 " << endl;
 	RELEASE(lpParam);
 	return 0;
 }
@@ -167,7 +173,7 @@ bool IocpServer::CIOCPModel1::LoadSocketLib() {
 	WSADATA wsaData;
 	int nResult = WSAStartup(MAKEWORD(2, 2), &wsaData);
 	if (NO_ERROR != nResult) {
-		qDebug() << "初始化WinSock 2.2失败" << endl;
+		cout << "初始化WinSock 2.2失败" << endl;
 		return false;
 	}
 	return true;
@@ -180,22 +186,22 @@ bool IocpServer::CIOCPModel1::Start() {
 	m_hShutdownEvent = CreateEvent(nullptr, TRUE, FALSE, nullptr);
 	//init IOCP
 	if (false == _InitializeIOCP()) {
-		qDebug() << "IOCP init fail" << endl;
+		cout << "IOCP init fail" << endl;
 		return false;
 	}
 	else {
-		qDebug() << "IOCP init complete" << endl;
+		cout << "IOCP init complete" << endl;
 	}
 	//init socket
 	if (false == _InitializeListenSocket()) {
-		qDebug() << "init listen socket fail" << endl;
+		cout << "init listen socket fail" << endl;
 		this->_DeInitialize();
 		return false;
 	}
 	else {
-		qDebug() << "listen socket init complete" << endl;
+		cout << "listen socket init complete" << endl;
 	}
-	qDebug() << "system init complete, waiting for connection" << endl;
+	cout << "system init complete, waiting for connection" << endl;
 	return true;
 }
 
@@ -212,7 +218,7 @@ void IocpServer::CIOCPModel1::Stop() {
 		WaitForMultipleObjects(m_nThreads, m_phWorkerThreads, TRUE, INFINITE);
 		this->_ClearContextList();
 		this->_DeInitialize();
-		qDebug() << "停止监听" << endl;
+		cout << "停止监听" << endl;
 	}
 	if (m_pListenContextUdp != nullptr&&m_pListenContextUdp->m_Socket != INVALID_SOCKET) {
 		// 激活关闭消息通知
@@ -225,7 +231,7 @@ void IocpServer::CIOCPModel1::Stop() {
 		WaitForMultipleObjects(m_nThreads, m_phWorkerThreads, TRUE, INFINITE);
 		this->_ClearContextList();
 		this->_DeInitialize();
-		qDebug() << "停止监听" << endl;
+		cout << "停止监听" << endl;
 	}
 }
 
@@ -237,7 +243,7 @@ bool IocpServer::CIOCPModel1::_InitializeIOCP()
 
 	if (nullptr == m_hIOCompletionPort)
 	{
-		qDebug() << "建立完成端口失败！错误代码: " << WSAGetLastError() << endl;
+		cout << "建立完成端口失败！错误代码: " << WSAGetLastError() << endl;
 		return false;
 	}
 
@@ -254,7 +260,7 @@ bool IocpServer::CIOCPModel1::_InitializeIOCP()
 		m_phWorkerThreads[i] = ::CreateThread(0, 0, _WorkerThread, (void *)pThreadParams, 0, &nThreadID);
 	}
 
-	qDebug() << "建立 _WorkerThread " << m_nThreads << "个." << endl;
+	cout << "建立 _WorkerThread " << m_nThreads << "个." << endl;
 
 	return true;
 }
@@ -276,35 +282,35 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	m_pListenContext->m_Socket = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == m_pListenContext->m_Socket)
 	{
-		qDebug() << "初始化Socket失败，错误代码: " << WSAGetLastError() << endl;
+		cout << "初始化Socket失败，错误代码: " << WSAGetLastError() << endl;
 		return false;
 	}
 	else
 	{
-		qDebug() << "WSASocket() 完成" << endl;
+		cout << "WSASocket() 完成" << endl;
 	}
 	//使用WSASocket建立udp socket
 	m_pListenContextUdp->m_Socket = WSASocket(AF_INET, SOCK_DGRAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == m_pListenContextUdp->m_Socket)
 	{
-		qDebug() << "初始化Udp Socket失败，错误代码: " << WSAGetLastError() << endl;
+		cout << "初始化Udp Socket失败，错误代码: " << WSAGetLastError() << endl;
 		return false;
 	}
 	else
 	{
-		qDebug() << "Udp WSASocket() 完成" << endl;
+		cout << "Udp WSASocket() 完成" << endl;
 	}
 	
 	//将Listen Socket绑定至完成端口中
 	if (nullptr == CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pListenContext->m_Socket), m_hIOCompletionPort, reinterpret_cast<ULONG_PTR>(m_pListenContext), 0))
 	{
-		qDebug() << "绑定 Listen Socket至完成端口失败！错误代码: " << WSAGetLastError() << endl;
+		cout << "绑定 Listen Socket至完成端口失败！错误代码: " << WSAGetLastError() << endl;
 		RELEASE_SOCKET(m_pListenContext->m_Socket);
 		return false;
 	}
 	else
 	{
-		qDebug() << "Listen Socket绑定完成端口 完成." << endl;
+		cout << "Listen Socket绑定完成端口 完成." << endl;
 	}
 	
 	//填充地址信息
@@ -314,44 +320,37 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	ServerAddress.sin_addr.s_addr = htonl(INADDR_ANY);
 	ServerAddress.sin_port = htons(m_nPort);
 
-	
+	int i = 0;
 	// 绑定地址和端口
-	if (SOCKET_ERROR == bind(m_pListenContext->m_Socket, (struct sockaddr *) &ServerAddress, sizeof(ServerAddress)))
+	while (SOCKET_ERROR == bind(m_pListenContext->m_Socket, (struct sockaddr *) &ServerAddress, sizeof(ServerAddress)) && i <= 100)
 	{
-		qDebug() << "bind()函数执行错误" << endl;
-		return false;
-	}
-	else
-	{
-		qDebug() << "bind() 完成." << endl;
+		cout << "bind()函数执行错误" << endl;
+		ServerAddress.sin_port = htons(++m_nPort);
+		i++;
 	}
 	
 	// 绑定UDP地址和端口
 	if (SOCKET_ERROR == bind(m_pListenContextUdp->m_Socket, (struct sockaddr *) &ServerAddress, sizeof(ServerAddress)))
 	{
-		qDebug() << "UDP bind()函数执行错误" << endl;
+		cout << "UDP bind()函数执行错误" << endl;
 		return false;
-	}
-	else
-	{
-		qDebug() << "UDP bind() 完成." << endl;
 	}
 	
 	//将Udp Listen Socket绑定至完成端口中
 	if (nullptr == CreateIoCompletionPort(reinterpret_cast<HANDLE>(m_pListenContextUdp->m_Socket), m_hIOCompletionPort, reinterpret_cast<ULONG_PTR>(m_pListenContextUdp), 0))
 	{
-		qDebug() << "绑定Udp Listen Socket至完成端口失败！错误代码: " << WSAGetLastError() << endl;
+		cout << "绑定Udp Listen Socket至完成端口失败！错误代码: " << WSAGetLastError() << endl;
 		RELEASE_SOCKET(m_pListenContextUdp->m_Socket);
 		return false;
 	}
 	else
 	{
-		qDebug() << "Udp Listen Socket绑定完成端口 完成." << endl;
+		cout << "Udp Listen Socket绑定完成端口 完成." << endl;
 	}
 	
 	//开始重叠recvfrom
-	qDebug() << "马上开始recv" << endl;
-	qDebug() << m_nThreads - MAX_POST_ACCEPT1 << endl;
+	cout << "马上开始recv" << endl;
+	cout << m_nThreads - MAX_POST_ACCEPT1 << endl;
 	for (int i = 0; i < m_nThreads - MAX_POST_ACCEPT1; i++) {
 		PER_IO_CONTEXT1* pRecvFromIoContext = m_pListenContextUdp->GetNewIoContext();
 		pRecvFromIoContext->m_sockAccept = m_pListenContextUdp->m_Socket;
@@ -364,12 +363,12 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 	// 开始进行监听(udp没有)
 	if (SOCKET_ERROR == listen(m_pListenContext->m_Socket, SOMAXCONN))
 	{
-		qDebug() << "Listen()函数执行出现错误." << endl;
+		cout << "Listen()函数执行出现错误." << endl;
 		return false;
 	}
 	else
 	{
-		qDebug() << "Listen() 完成." << endl;
+		cout << "Listen() 完成." << endl;
 	}
 
 	// 使用AcceptEx函数，因为这个是属于WinSock2规范之外的微软另外提供的扩展函数
@@ -387,7 +386,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 		nullptr,
 		nullptr
 	)) {
-		qDebug() << "WSAIoctl 未能获取AcceptEx函数指针。错误代码: " << WSAGetLastError() << endl;
+		cout << "WSAIoctl 未能获取AcceptEx函数指针。错误代码: " << WSAGetLastError() << endl;
 		this->_DeInitialize();
 		return false;
 	}
@@ -404,7 +403,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 		nullptr,
 		nullptr))
 	{
-		qDebug() << "WSAIoctl 未能获取GuidGetAcceptExSockAddrs函数指针。错误代码: " << WSAGetLastError() << endl;
+		cout << "WSAIoctl 未能获取GuidGetAcceptExSockAddrs函数指针。错误代码: " << WSAGetLastError() << endl;
 		this->_DeInitialize();
 		return false;
 	}
@@ -422,7 +421,7 @@ bool IocpServer::CIOCPModel1::_InitializeListenSocket() {
 		}
 	}
 
-	qDebug() << "投递 " << MAX_POST_ACCEPT1 << " 个AcceptEx请求完毕" << endl;
+	cout << "投递 " << MAX_POST_ACCEPT1 << " 个AcceptEx请求完毕" << endl;
 
 	return true;
 }
@@ -451,7 +450,7 @@ void IocpServer::CIOCPModel1::_DeInitialize()
 	RELEASE(m_pListenContext);
 	RELEASE(m_pListenContextUdp);
 
-	qDebug() << "释放资源完毕." << endl;
+	cout << "释放资源完毕." << endl;
 }
 
 /*********************************************************************/
@@ -469,7 +468,7 @@ bool IocpServer::CIOCPModel1::_PostAccept(PER_IO_CONTEXT1* pAcceptIoContext)
 	pAcceptIoContext->m_sockAccept = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 	if (INVALID_SOCKET == pAcceptIoContext->m_sockAccept)
 	{
-		qDebug() << "创建用于Accept的Socket失败！错误代码: " << WSAGetLastError() << endl;
+		cout << "创建用于Accept的Socket失败！错误代码: " << WSAGetLastError() << endl;
 		return false;
 	}
 
@@ -479,7 +478,7 @@ bool IocpServer::CIOCPModel1::_PostAccept(PER_IO_CONTEXT1* pAcceptIoContext)
 	{
 		if (WSA_IO_PENDING != WSAGetLastError())
 		{
-			qDebug() << "投递 AcceptEx 请求失败，错误代码: " << WSAGetLastError() << endl;
+			cout << "投递 AcceptEx 请求失败，错误代码: " << WSAGetLastError() << endl;
 			return false;
 		}
 	}
@@ -495,8 +494,8 @@ bool IocpServer::CIOCPModel1::_DoAccept(PER_SOCKET_CONTEXT1* pSocketContext, PER
 	this->m_lpfnGetAcceptExSockAddrs(pIoContext->m_wsaBuf.buf, pIoContext->m_wsaBuf.len - ((sizeof(SOCKADDR_IN) + 16) * 2),
 		sizeof(SOCKADDR_IN) + 16, sizeof(SOCKADDR_IN) + 16, (LPSOCKADDR*)&LocalAddr, &localLen, (LPSOCKADDR*)&ClientAddr, &remoteLen);
 
-	qDebug() << "客户端 " << inet_ntoa(ClientAddr->sin_addr) << ":" << ntohs(ClientAddr->sin_port) << " 连入. " << endl;
-	qDebug() << "客户端 " << inet_ntoa(ClientAddr->sin_addr) << ":" << ntohs(ClientAddr->sin_port) << " 信息： " << pIoContext->m_wsaBuf.buf << endl;
+	cout << "客户端 " << inet_ntoa(ClientAddr->sin_addr) << ":" << ntohs(ClientAddr->sin_port) << " 连入. " << endl;
+	cout << "客户端 " << inet_ntoa(ClientAddr->sin_addr) << ":" << ntohs(ClientAddr->sin_port) << " 信息： " << pIoContext->m_wsaBuf.buf << endl;
 
 	// 2. 这里需要注意，这里传入的这个是ListenSocket上的Context，这个Context我们还需要用于监听下一个连接
 	// 所以我还得要将ListenSocket上的Context复制出来一份为新连入的Socket新建一个SocketContext
@@ -550,7 +549,7 @@ bool IocpServer::CIOCPModel1::_PostRecv(PER_IO_CONTEXT1* pIoContext)
 	// 如果返回值错误，并且错误的代码并非是Pending的话，那就说明这个重叠请求失败了
 	if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
 	{
-		qDebug() << "投递第一个WSARecv失败！ " << endl;
+		cout << "投递第一个WSARecv失败！ " << endl;
 		return false;
 	}
 	return true;
@@ -573,7 +572,7 @@ bool IocpServer::CIOCPModel1::_PostSend(PER_IO_CONTEXT1* pIoContext)
 	// 如果返回值错误，并且错误的代码并非是Pending的话，那就说明这个重叠请求失败了
 	if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
 	{
-		qDebug() << "投递WSASend失败！ " << endl;
+		cout << "投递WSASend失败！ " << endl;
 		return false;
 	}
 	return true;
@@ -584,7 +583,7 @@ bool IocpServer::CIOCPModel1::_DoRecv(PER_SOCKET_CONTEXT1* pSocketContext, PER_I
 {
 	// 先把上一次的数据显示出现，然后就重置状态，发出下一个Recv请求
 	SOCKADDR_IN* ClientAddr = &pIoContext->remoteAddr;
-	qDebug() << "收到  " << inet_ntoa(ClientAddr->sin_addr) << ":" << ntohs(ClientAddr->sin_port) << " 信息： " << pIoContext->m_wsaBuf.buf << endl;
+	cout << "收到  " << inet_ntoa(ClientAddr->sin_addr) << ":" << ntohs(ClientAddr->sin_port) << " 信息： " << pIoContext->m_wsaBuf.buf << endl;
 
 	// 然后开始投递下一个WSARecv请求
 	return _PostRecv(pIoContext);
@@ -605,12 +604,12 @@ bool IocpServer::CIOCPModel1::_PostRecvFrom(PER_IO_CONTEXT1* pIoContext) {
 	// 初始化完成后，投递WSARecv请求
 	int nBytesRecv = WSARecvFrom(pIoContext->m_sockAccept, p_wbuf, 1, &dwBytes, &dwFlags, (SOCKADDR*)& (pIoContext->remoteAddr), &(pIoContext->remoteAddrLen), p_ol, nullptr);
 
-	//qDebug() << pIoContext->remoteAddr.sin_addr.S_un.S_addr << endl;
+	//cout << pIoContext->remoteAddr.sin_addr.S_un.S_addr << endl;
 
 	// 如果返回值错误，并且错误的代码并非是Pending的话，那就说明这个重叠请求失败了
 	if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
 	{
-		qDebug() << "投递第一个WSARecvFrom失败！ " << WSAGetLastError() << endl;
+		cout << "投递第一个WSARecvFrom失败！ " << WSAGetLastError() << endl;
 		return false;
 	}
 	return true;
@@ -619,26 +618,12 @@ bool IocpServer::CIOCPModel1::_PostRecvFrom(PER_IO_CONTEXT1* pIoContext) {
 bool IocpServer::CIOCPModel1::_DoRecvFrom(PER_IO_CONTEXT1* pIoContext, int threadNo, int curBufNo ) {
 	// 先把上一次的数据显示出现，然后就重置状态，发出下一个Recv请求
 	SOCKADDR_IN* ClientAddr = &pIoContext->remoteAddr;
-	qDebug() << "收到" << inet_ntoa(ClientAddr->sin_addr) << ":" << ntohs(ClientAddr->sin_port) << " 信息： " << this->bufferPtr[threadNo][curBufNo] << endl;
-	//qDebug() << (int)*pIoContext->m_wsaBuf.buf << endl;
+	cout << "收到" << inet_ntoa(ClientAddr->sin_addr) << ":" << ntohs(ClientAddr->sin_port) << " 信息： " << this->bufferPtr[threadNo][curBufNo] << endl;
+	
+	//测试回调函数
+	pCallBack(this->bufferPtr[threadNo][curBufNo]);
 
-	//qDebug() << (int)pIoContext->m_wsaBuf.buf[0] << endl;
-	//qDebug() << (int)pIoContext->m_wsaBuf.buf[1] << endl;
-	//qDebug() << (int)pIoContext->m_wsaBuf.buf[2] << endl;
-	//qDebug() << (int)pIoContext->m_wsaBuf.buf[3] << endl;
-	//qDebug() << (int)pIoContext->m_wsaBuf.buf[4] << endl;
-	//对收到的数据进行处理
-	//PER_IO_CONTEXT1 temp = *pIoContext;
-	//m_tempContextArray.push_back(temp);
-	//char temp[8192];
-	//memcpy(temp, pIoContext->m_szBuffer, 8192);
-	//WSABUF temp = (WSABUF)pIoContext->m_wsaBuf;
-	qDebug() << "emit" << endl;
-	emit parent->serviceHandler(pIoContext, this->bufferPtr[threadNo][curBufNo]);
-
-	// 然后开始投递下一个WSARecv请求
-	//return _PostRecvFrom(pIoContext);
-
+	// 然后开始投递下一个WSARecvFrom请求
 	PER_IO_CONTEXT1* pRecvFromIoContext = m_pListenContextUdp->GetNewIoContext();
 	pRecvFromIoContext->m_sockAccept = m_pListenContextUdp->m_Socket;
 	if (false == this->_PostRecvFrom(pRecvFromIoContext))
@@ -661,7 +646,7 @@ bool IocpServer::CIOCPModel1::_PostSendTo(char* addr, char* buffer) {
 
 	pSendToIoContext->remoteAddr.sin_family = AF_INET;
 	pSendToIoContext->remoteAddr.sin_addr.S_un.S_addr = inet_addr(addr);
-	pSendToIoContext->remoteAddr.sin_port = htons(1001);
+	pSendToIoContext->remoteAddr.sin_port = htons(SERVER_PORT);
 	pSendToIoContext->remoteAddrLen = sizeof(pSendToIoContext->remoteAddr);
 
 	pSendToIoContext->m_OpType = SENDTO_POST;
@@ -672,7 +657,7 @@ bool IocpServer::CIOCPModel1::_PostSendTo(char* addr, char* buffer) {
 	// 如果返回值错误，并且错误的代码并非是Pending的话，那就说明这个重叠请求失败了
 	if ((SOCKET_ERROR == nBytesRecv) && (WSA_IO_PENDING != WSAGetLastError()))
 	{
-		qDebug() << "投递WSASendTo失败！ " << endl;
+		cout << "投递WSASendTo失败！ " << endl;
 		return false;
 	}
 	return true;
@@ -686,7 +671,7 @@ bool IocpServer::CIOCPModel1::_AssociateWithIOCP(PER_SOCKET_CONTEXT1 *pContext)
 
 	if (nullptr == hTemp)
 	{
-		qDebug() << "执行CreateIoCompletionPort()出现错误.错误代码： " << GetLastError() << endl;
+		cout << "执行CreateIoCompletionPort()出现错误.错误代码： " << GetLastError() << endl;
 		return false;
 	}
 
@@ -702,13 +687,13 @@ bool IocpServer::CIOCPModel1::HandleError(PER_SOCKET_CONTEXT1 *pContext, const D
 		// 确认客户端是否还活着...
 		if (!_IsSocketAlive(pContext->m_Socket))
 		{
-			qDebug() << "检测到客户端异常退出！" << endl;
+			cout << "检测到客户端异常退出！" << endl;
 			this->_RemoveContext(pContext);
 			return true;
 		}
 		else
 		{
-			qDebug() << "网络操作超时！重试中..." << endl;
+			cout << "网络操作超时！重试中..." << endl;
 			return true;
 		}
 	}
@@ -716,14 +701,14 @@ bool IocpServer::CIOCPModel1::HandleError(PER_SOCKET_CONTEXT1 *pContext, const D
 	// 可能是客户端异常退出了
 	else if (ERROR_NETNAME_DELETED == dwErr)
 	{
-		qDebug() << "检测到客户端异常退出！" << endl;
+		cout << "检测到客户端异常退出！" << endl;
 		this->_RemoveContext(pContext);
 		return true;
 	}
 
 	else
 	{
-		qDebug() << "完成端口操作出现错误，线程退出。错误代码：" << dwErr << endl;
+		cout << "完成端口操作出现错误，线程退出。错误代码：" << dwErr << endl;
 		return false;
 	}
 }
@@ -834,7 +819,7 @@ void IocpServer::CIOCPModel1::_AddToContextList(PER_SOCKET_CONTEXT1 *pHandleData
 //		temp = m_arrayClientContext[0];
 //	}
 //	else {
-//		qDebug() << "no socket" << endl;
+//		cout << "no socket" << endl;
 //		return;
 //	}
 //
@@ -843,8 +828,8 @@ void IocpServer::CIOCPModel1::_AddToContextList(PER_SOCKET_CONTEXT1 *pHandleData
 //	pNewIoContext->m_OpType = SEND_POST;
 //	pNewIoContext->m_sockAccept = temp->m_Socket;
 //	strcpy(pNewIoContext->m_szBuffer, "test");
-//	qDebug() << pNewIoContext->m_szBuffer << endl;
-//	qDebug() << "!!!" << endl;
+//	cout << pNewIoContext->m_szBuffer << endl;
+//	cout << "!!!" << endl;
 //	// 绑定完毕之后，就可以开始在这个Socket上投递完成请求了
 //	if (false == this->_PostSend(pNewIoContext))
 //	{
@@ -861,8 +846,9 @@ void IocpServer::CIOCPModel1::SendDataTo(char* addr, char* buffer) {
 	_PostSendTo(addr, buffer);
 }
 
-IocpServer::IocpServer()
+IocpServer::IocpServer(/*UdpChatService* udpChatService*/)
 {
+	//this->udpChatService = udpChatService; 
 	m_IOCP = new CIOCPModel1(this);
 }
 
@@ -873,18 +859,18 @@ IocpServer::~IocpServer()
 
 bool IocpServer::serverStart() {
 	if (false == m_IOCP->LoadSocketLib()) {
-		qDebug() << "*** 加载Winsock 2.2失败，服务器端无法运行！ ***" << endl;
+		cout << "*** 加载Winsock 2.2失败，服务器端无法运行！ ***" << endl;
 		return false;
 	}
 	else {
-		qDebug() << "加载Winsock 2.2" << endl;
+		cout << "加载Winsock 2.2" << endl;
 	}
 	if (false == m_IOCP->Start()) {
-		qDebug() << "*** server start fail ***" << endl;
+		cout << "*** server start fail ***" << endl;
 		return false;
 	}
 	else {
-		qDebug() << "server start" << endl;
+		cout << "server start" << endl;
 		return true;
 	}
 }

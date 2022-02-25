@@ -1,4 +1,8 @@
 #pragma once
+/*
+Config类
+包含各种配置信息（编译和运行时产生的）
+*/
 class Config
 {
 public:

@@ -1,5 +1,8 @@
 ﻿#pragma once
-
+/*
+MyBorderContainer
+自定义窗口边框组件
+*/
 #include <QWidget>
 #include <QObject>
 #include <QLabel>

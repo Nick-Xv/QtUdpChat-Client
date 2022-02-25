@@ -1,4 +1,6 @@
 ﻿#include "QtUdpChat.h"
+#include "UdpChatService.h"
+#include "IocpServer.h"
 #include <QtWidgets/QApplication>
 #include "Config.h"
 

@@ -123,8 +123,8 @@
     <QtMoc Include="mytitlebar.h" />
   </ItemGroup>
   <ItemGroup>
-    <QtMoc Include="UdpChatService.h" />
-    <QtMoc Include="IocpServer.h" />
+    <ClInclude Include="UdpChatService.h" />
+    <ClInclude Include="IocpServer.h" />
     <QtMoc Include="ChatRoom.h" />
     <QtMoc Include="MyBorderContainer.h" />
     <ClInclude Include="Config.h" />

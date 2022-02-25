@@ -1,21 +1,31 @@
 ﻿#pragma once
 #pragma execution_character_set("utf-8")
+/*
+IocpServer
+初始化完成端口服务
+接收udp报文并用信号发给UdpChatService
+接收来自UdpChatService的信号并向服务器发送
+*/
+typedef void(*pFunc) (char* pVal);
+pFunc pCallBack = NULL;
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
 #include <vector>
 #include <mswsock.h>
-#include <QDebug> 
-#include <QMetaType>
 #include <malloc.h>
+#include <iostream>
 using std::string;
 using std::vector;
+using std::cout;
+using std::endl;
 
 extern enum SERVICE_TYPE;
 
 const int MAX_BUFFER_LEN1 = 8192;//缓冲区长度
 const int BUFFER_TEMP_LEN1 = 50;
-const int DEFAULT_PORT1 = 1000;//默认端口
+const int DEFAULT_PORT1 = 1001;//默认端口
+const int SERVER_PORT = 1000;//服务器端口
 
 // 在完成端口上投递的I/O操作的类型
 typedef enum _OPERATION_TYPE1 {
@@ -116,15 +126,18 @@ typedef struct _PER_SOCKET_CONTEXT1 {
 	}
 }PER_SOCKET_CONTEXT1, *PPER_SOCKET_CONTEXT1;
 
-class IocpServer : public QObject
+//extern class UdpChatService;
+
+class IocpServer
 {
-	Q_OBJECT
 public:
-	IocpServer();
+	IocpServer(/*UdpChatService* udpChatService*/);
 	~IocpServer();
 	bool serverStart();
 	void serverStop();
 	void SendDataTo(char* addr, char* buffer);//发送数据
+
+	int __stdcall CALLBACKFun(pFunc pFun);
 
 	class CIOCPModel1 {
 	public:
@@ -188,10 +201,9 @@ public:
 		//缓冲区三维数组指针
 		char*** bufferPtr;
 	};
-signals:
-	void serviceHandler(PER_IO_CONTEXT1* pIoContext, char* buff);
 private:
 	CIOCPModel1* m_IOCP;//完成端口模型
+	//UdpChatService* udpChatService;
 };
 
 typedef struct _tagThreadParams_WORKER1 {

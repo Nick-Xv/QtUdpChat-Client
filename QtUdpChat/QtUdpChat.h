@@ -1,5 +1,11 @@
 ﻿#pragma once
 #pragma execution_character_set("utf-8")
+/*
+QtUdpChat
+登录界面类
+1.将用户操作产生的数据通过信号发给UdpChatService
+2.接收来自UdpChatService的信号并做出UI反馈
+*/
 #include <QtWidgets/QWidget>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
@@ -13,6 +19,8 @@
 #include <QApplication>
 #include <QDesktopWidget>
 #include <QLineEdit>
+#include <QMessageBox>
+#include <string>
 #include "mytitlebar.h"
 #include "MyBorderContainer.h"
 #include "UdpChatService.h"
@@ -30,6 +38,14 @@ public:
 
 	static int roomid;
 	static int userid;
+
+	void doRegistAck(vector<char*> v);
+	void doSigninAck(vector<char*> v);
+	void doHeartbeatAck(vector<char*> v);
+
+	void stopWaiting();
+
+	void showSimpleMessageBox(int type, string title, string content);
 
 protected:
 	static DWORD WINAPI _CheckHeartbeatThread(LPVOID lpParam);//心跳线程函数
@@ -88,10 +104,6 @@ private slots:
 	void onButtonBackClicked();
 	void onButtonSendRegistClicked();
 	void onButtonEnterClicked();
-
-	void doRegistAck(char* buffer);
-	void doSigninAck(char* buffer);
-	void doHeartbeatAck(char* buffer);
 
 	void doSignout();
 };
