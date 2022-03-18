@@ -6,8 +6,15 @@ IocpServer
 接收udp报文并用信号发给UdpChatService
 接收来自UdpChatService的信号并向服务器发送
 */
-typedef void(*pFunc) (char* pVal);
-pFunc pCallBack = NULL;
+#ifndef _DEBUGPRINTF_H_    
+#define _DEBUGPRINTF_H_ 
+#endif
+#include <tchar.h>
+#define DP(fmt) {TCHAR sOut[256];_stprintf_s(sOut,_T(fmt));OutputDebugString(sOut);}
+#define DP1(fmt,var) {TCHAR sOut[256];_stprintf_s(sOut,_T(fmt),var);OutputDebugString(sOut);}
+#define DP2(fmt,var1,var2) {TCHAR sOut[256];_stprintf_s(sOut,_T(fmt),var1,var2);OutputDebugString(sOut);}    
+#define DP3(fmt,var1,var2,var3) {TCHAR sOut[256];_stprintf_s(sOut,_T(fmt),var1,var2,var3);OutputDebugString(sOut);}
+
 #include <string>
 #include <winsock2.h>
 #include <windows.h>
@@ -15,11 +22,15 @@ pFunc pCallBack = NULL;
 #include <mswsock.h>
 #include <malloc.h>
 #include <iostream>
+#include <functional>
 using std::string;
 using std::vector;
-using std::cout;
 using std::endl;
+using namespace std::placeholders;
 
+//Fun函数模板，接受char*参数，返回void
+typedef std::function<void(char*)> Fun;
+ 
 extern enum SERVICE_TYPE;
 
 const int MAX_BUFFER_LEN1 = 8192;//缓冲区长度
@@ -131,13 +142,14 @@ typedef struct _PER_SOCKET_CONTEXT1 {
 class IocpServer
 {
 public:
-	IocpServer(/*UdpChatService* udpChatService*/);
+	IocpServer(Fun f);
 	~IocpServer();
 	bool serverStart();
 	void serverStop();
 	void SendDataTo(char* addr, char* buffer);//发送数据
 
-	int __stdcall CALLBACKFun(pFunc pFun);
+	//存储回调函数指针
+	Fun callDispatcher;
 
 	class CIOCPModel1 {
 	public:
@@ -153,6 +165,9 @@ public:
 		static int _GetNoOfProcessors();//本机处理器数量
 
 		void SendDataTo(char* addr, char* buffer);//发送数据
+
+		//存储回调函数指针
+		Fun callDispatcher;
 		 
 	protected:
 		bool _InitializeIOCP();//init iocp

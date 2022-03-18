@@ -11,8 +11,14 @@ UdpChatService
 1.接收来自UI类的信号
 2.分析信号，处理后给IocpServer发信号
 */
-typedef void(UdpChatService::*pFunc) (char* pval);
-int __stdcall CALLBACKFun(pFunc pFun);
+#ifndef _DEBUGPRINTF_H_    
+#define _DEBUGPRINTF_H_ 
+#endif
+#include <tchar.h>
+#define DP(fmt) {TCHAR sOut[256];_stprintf_s(sOut,_T(fmt));OutputDebugString(sOut);}
+#define DP1(fmt,var) {TCHAR sOut[256];_stprintf_s(sOut,_T(fmt),var);OutputDebugString(sOut);}
+#define DP2(fmt,var1,var2) {TCHAR sOut[256];_stprintf_s(sOut,_T(fmt),var1,var2);OutputDebugString(sOut);}    
+#define DP3(fmt,var1,var2,var3) {TCHAR sOut[256];_stprintf_s(sOut,_T(fmt),var1,var2,var3);OutputDebugString(sOut);}
 
 #include "iocpserver.h"
 #include <winsock2.h>
@@ -20,10 +26,24 @@ int __stdcall CALLBACKFun(pFunc pFun);
 #include <utility>
 #include <iostream>
 #include "Config.h"
+#include <functional>
+using namespace std::placeholders;
 using std::pair;
 using std::map;
-using std::cout;
 using std::endl;
+
+//Fun函数模板，接受char*参数，返回void
+typedef std::function<void(char*)> Fun;
+//Emiter函数模板，用于调用GUI发送信号
+typedef std::function<void(int, char*)> Emiter;
+//ArgsEmiter函数模板，用于调用带参数GUI发送信号
+typedef std::function<void(int, vector<char*>*)> ArgsEmiter;
+
+//ChatEmiter函数模板，用于Chat界面GUI发送信号
+typedef std::function<void(int, char*)> ChatEmiter;
+//ChatArgsEmiter函数模板，用于Chat界面带vector参数GUI信号
+typedef std::function<void(int, vector<char*>* args)> ChatArgsEmiter;
+
 enum SERVICE_TYPE {
 	NO_SERVICE,
 	//GET
@@ -49,13 +69,18 @@ extern class ChatRoom;
 class UdpChatService
 {
 public:
-	UdpChatService(QtUdpChat* q, ChatRoom* c); 
+	UdpChatService(QtUdpChat* q, ChatRoom* c, Emiter e, ArgsEmiter ae, ChatEmiter ce, ChatArgsEmiter cae);
 	~UdpChatService();
 	bool initService();
 	void closeService();
 	//发送请求报文
 	void s_PostRequest(char* addr, vector<char*> args);
 	void serviceDispatcher(char* buf);
+	Fun fun;
+	Emiter emiter;
+	ArgsEmiter argsEmiter;
+	ChatEmiter chatEmiter;
+	ChatArgsEmiter chatArgsEmiter;
 
 private:
 	IocpServer* iocpServer;

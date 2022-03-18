@@ -24,6 +24,8 @@ ChatRoom聊天室界面类
 #include <list>
 #include <vector>
 #include <algorithm>
+#include <QVariant>
+#include <QMetaType>
 
 #include "mytitlebar.h"
 #include "MyBorderContainer.h"
@@ -33,6 +35,13 @@ ChatRoom聊天室界面类
 
 #include "Config.h"
 
+Q_DECLARE_METATYPE(QVector<char*>);
+
+//ChatEmiter函数模板，接受int和char*参数，返回void
+typedef std::function<void(int, char*)> ChatEmiter;
+//ChatArgsEmiter函数模板，接受int和vector<char*>参数，返回void
+typedef std::function<void(int, vector<char*>*)> ChatArgsEmiter;
+
 using std::list;
 class ChatRoom : public QWidget
 {
@@ -41,11 +50,20 @@ public:
 	ChatRoom(QWidget *parent, UdpChatService* udpChatService);
 	~ChatRoom();
 
+	void setUdpChatService(UdpChatService* u);
 	void setRoomValues(int roomid, int userid, QString userName, char* addr);
 	void getRecords();
 
-	void doPostrecordAck(vector<char*> c);
-	void doPostrecordsAck(vector<char*> c);
+	void doPostrecordAck(vector<char*>* c);
+	void doPostrecordsAck(vector<char*>* c);
+
+	//回调函数：信号发生器
+	ChatEmiter chatEmiter;
+	ChatArgsEmiter chatArgsEmiter;
+
+signals:
+	void doPostrecordAckSig(vector<char*>* args);
+	void doPostrecordsAckSig(vector<char*>* args);
 
 private:
 	//自定义延时函数
@@ -92,6 +110,10 @@ private:
 	list<MessageContainer*> messageContainerList;
 
 	//list<MemberContainer*> memberContainerList;
+
+	//信号发生函数
+	void signalEmiterCallback(int type, char* content);
+	void signalArgsEmiterCallback(int type, vector<char*>* args);
 
 private slots:
 	void onButtonMaxClicked();

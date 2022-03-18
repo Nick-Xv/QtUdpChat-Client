@@ -12,6 +12,13 @@ ChatRoom::ChatRoom(QWidget *parent, UdpChatService* udpChatService) : QWidget(pa
 { 
 	this->udpChatService = udpChatService;
 
+	//注册QVariant
+	qRegisterMetaType<QVariant>("QVariant");
+
+	//绑定回调函数
+	chatEmiter = std::bind(&ChatRoom::signalEmiterCallback, this, _1, _2);
+	chatArgsEmiter = std::bind(&ChatRoom::signalArgsEmiterCallback, this, _1, _2);
+
 	buffer = new char[Config::buffer_size];
 	memset(buffer, 0, Config::buffer_size);
 
@@ -125,6 +132,10 @@ ChatRoom::ChatRoom(QWidget *parent, UdpChatService* udpChatService) : QWidget(pa
 	connect(button_send, &QPushButton::clicked, this, &ChatRoom::onButtonSendClicked);
 	//获取聊天记录按钮绑定
 	connect(button_getRecords, &QPushButton::clicked, this, &ChatRoom::getRecords);
+
+	//界面信号槽绑定
+	connect(this, &ChatRoom::doPostrecordAckSig, this, &ChatRoom::doPostrecordAck, Qt::QueuedConnection);
+	connect(this, &ChatRoom::doPostrecordsAckSig, this, &ChatRoom::doPostrecordsAck, Qt::QueuedConnection);
 }
 
 
@@ -237,8 +248,9 @@ void ChatRoom::setRoomValues(int roomid, int userid, QString userName, char* add
 }
 
 //处理收到一条消息
-void ChatRoom::doPostrecordAck(vector<char*> v) {
-	if (v.size != 6) {
+void ChatRoom::doPostrecordAck(vector<char*>* vv) {
+	vector<char*> v = *vv;
+	if (v.size() != 6) {
 		qDebug() << "接收到错误数据!!!" << endl;
 	}
 	QString useridQString(v[0]);
@@ -284,8 +296,9 @@ void ChatRoom::doPostrecordAck(vector<char*> v) {
 }
 
 //处理收到的消息记录
-void ChatRoom::doPostrecordsAck(vector<char*> v) {
-	if (v.size != 6) {
+void ChatRoom::doPostrecordsAck(vector<char*>* vv) {
+	vector<char*> v = *vv;
+	if (v.size() != 6) {
 		qDebug() << "接收到错误数据!!!" << endl;
 	}
 	QString useridQString(v[0]);
@@ -356,4 +369,29 @@ void ChatRoom::getRecords() {
 
 	//传参发送
 	udpChatService->s_PostRequest(addr, args);
+}
+
+//回调函数，信号发生
+void ChatRoom::signalEmiterCallback(int type, char* content) {
+
+}
+
+//带vector参数回调函数
+void ChatRoom::signalArgsEmiterCallback(int type, vector<char*>* args) {
+	QVector<char*> v;
+
+	switch (type) {
+	case 0:
+		//收到一条聊天记录
+		emit doPostrecordAckSig(args);
+		break;
+	case 1:
+		//收到一堆聊天记录
+		emit doPostrecordsAckSig(args);
+		break;
+	}
+}
+
+void ChatRoom::setUdpChatService(UdpChatService* u) {
+	udpChatService = u;
 }

@@ -15,6 +15,9 @@ UdpChatService* QtUdpChat::udpChatService = nullptr;
 QtUdpChat::QtUdpChat(QWidget *parent)
     : QWidget(parent)
 {
+	//注册QVariant
+	qRegisterMetaType<QVariant>("QVariant");
+
 	//心跳句柄
 	HeartbeatThreadHandle = new HANDLE;
 	*HeartbeatThreadHandle = INVALID_HANDLE_VALUE;
@@ -199,8 +202,20 @@ QtUdpChat::QtUdpChat(QWidget *parent)
 	//加载聊天室界面
 	chatRoom = new ChatRoom(Q_NULLPTR, udpChatService);
 
+	//绑定回调函数
+	signalEmiter = std::bind(&QtUdpChat::signalEmiterCallback, this, _1, _2);
+	signalArgsEmiter = std::bind(&QtUdpChat::signalArgsEmiterCallback, this, _1, _2);
+
 	//启动完成端口服务
-	udpChatService = new UdpChatService(this, chatRoom);
+	udpChatService = new UdpChatService(this, chatRoom, signalEmiter, signalArgsEmiter, chatRoom->chatEmiter, chatRoom->chatArgsEmiter);
+
+	chatRoom->setUdpChatService(udpChatService);
+
+	//界面信号槽
+	connect(this, &QtUdpChat::showMessageBox, this, &QtUdpChat::doShowMessageBox, Qt::QueuedConnection);
+	connect(this, &QtUdpChat::stopWaitingSig, this, &QtUdpChat::stopWaiting, Qt::QueuedConnection);
+	connect(this, &QtUdpChat::onButtonBackClickedSig, this, &QtUdpChat::onButtonBackClicked, Qt::QueuedConnection);
+	connect(this, &QtUdpChat::doSigninAckSig, this, &QtUdpChat::doSigninAck, Qt::QueuedConnection);
 }
 
 QtUdpChat::~QtUdpChat() {
@@ -406,97 +421,46 @@ void QtUdpChat::doSignout() {
 	RELEASE(HeartbeatThreadHandle);
 }
 
-//接收到注册ACK
-void QtUdpChat::doRegistAck(vector<char*> v) {
-	onButtonBackClicked();
-	
-}
-
 //接收到登录ACK
-void QtUdpChat::doSigninAck(vector<char*> v) {
-	//输出返回值
-	char test;
-	memcpy(&test, &buffer[1], 1);
-	qDebug() << (int)test << endl;
-
+void QtUdpChat::doSigninAck(QVariant qv) {
+	//密码正确，首先检查是否有房间号
 	QString roomID;
-	userid = 0;
-
-	//获取userid
-	int i = 2;
-	int beginPtr = 0;
-	int endPtr = 0;
-	int num = 0;
-	beginPtr = i;
-	while (buffer[i] != 0 || buffer[i + 1] != 0) {
-		if (buffer[i] == 0) {
-			endPtr = i;
-		}
-		i++;
+	roomID = roomInput->text();
+	if (roomID.length() < 1) {
+		showSimpleMessageBox(0, "错误", "请输入房间号!");
+		return;
 	}
-	char* useridString = new char[endPtr - beginPtr + 1];
-	memset(useridString, 0, endPtr - beginPtr + 1);
-	memcpy(useridString, &buffer[beginPtr], endPtr - beginPtr);
-	QString useridQString(useridString);
-	userid = useridQString.toInt();
-	
-
+	roomid = roomID.toInt();
+	if (roomid <= 0 || roomid >= 1001) {
+		showSimpleMessageBox(0, "错误", "请输入正确的房间号1-1000!");
+		return;
+	}
+	QVector<char*> v = qv.value<QVector<char*>>();
+	qDebug() << v.size() << endl;
+	//获取userid
+	userid = atoi(v[0]);
+	//检查userid是否正常
+	if (userid == 0) {//不正常
+		showSimpleMessageBox(0, "错误", "获取用户ID失败!");
+		return;
+	}
+	//可以继续
+	showSimpleMessageBox(1, "信息", "登录成功!");
+	//进入聊天室页面
 	QString serverAddress = serverAddrInput->text();
 	QByteArray temp;
-	//根据返回值进行操作
-	switch ((int)test) {
-	case 0:
-		//数据错误
-		showSimpleMessageBox(0, "错误", "数据错误!");
-		break;
-	case 1:
-		//密码正确，首先检查是否有房间号
-		roomID = roomInput->text();
-		if (roomID.length() < 1) {
-			showSimpleMessageBox(0, "错误", "请输入房间号!");
-			break;
-		}
-		roomid = roomID.toInt();
-		if (roomid <= 0 || roomid >= 1001) {
-			showSimpleMessageBox(0, "错误", "请输入正确的房间号1-1000!");
-			break;
-		}
-		//检查userid是否正常
-		if (userid == 0) {//不正常
-			showSimpleMessageBox(0, "错误", "获取用户ID失败!");
-			break;
-		}
-		//可以继续
-		showSimpleMessageBox(1, "信息", "登录成功!");
-		//进入聊天室页面
-		temp.append(serverAddress);
-		addr = temp.data();
-		chatRoom->setRoomValues(roomid, userid, nameInput->text(), addr); 
-		chatRoom->getRecords();
-		chatRoom->show();
-		this->hide();
-		//打开心跳发送线程
-		*HeartbeatThreadHandle = ::CreateThread(0, 0, _CheckHeartbeatThread, this, 0, nullptr);
-		break;
-	case 2:
-		//数据库错误
-		showSimpleMessageBox(0, "错误", "数据库错误!");
-		break;
-	case 3:
-		//密码错误
-		showSimpleMessageBox(0, "错误", "密码错误!");
-		break;
-	default:
-		//未知返回值
-		showSimpleMessageBox(0,"错误","未知返回值!");
-		break;
-	}
-	//停止转圈
-	waitMovie->stop();
-	waitLabel->setVisible(false);
+	temp.append(serverAddress);
+	addr = temp.data();
+	chatRoom->setRoomValues(roomid, userid, nameInput->text(), addr); 
+	chatRoom->getRecords();
+	chatRoom->show();
+	this->hide();
+	//打开心跳发送线程
+	*HeartbeatThreadHandle = ::CreateThread(0, 0, _CheckHeartbeatThread, this, 0, nullptr);
 }
 
 //接收到心跳ACK
+//暂时没什么用
 void QtUdpChat::doHeartbeatAck(vector<char*> v) {
 	//输出返回值
 	char test;
@@ -572,6 +536,59 @@ void QtUdpChat::showSimpleMessageBox(int type, string title, string content) {
 		break;
 	case 1://信息
 		QMessageBox::information(NULL, QString::fromStdString(title), QString::fromStdString(content), QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	}
+}
+
+//信号发生回调函数
+//供UdpChatService类调用，发生GUI信号
+void QtUdpChat::signalEmiterCallback(int type, char* content) {
+	switch (type) {
+	case 0:
+		//错误弹窗
+		emit showMessageBox(0, content);
+		break;
+	case 1:
+		//信息弹窗
+		emit showMessageBox(1, content);
+		break;
+	case 2:
+		//停止转圈
+		emit stopWaitingSig();
+		break;
+	case 3:
+		//注册成功返回
+		emit onButtonBackClickedSig();
+		break;
+	default:
+		break;
+	}
+}
+
+//带参数信号发生回调函数
+void QtUdpChat::signalArgsEmiterCallback(int type, vector<char*>* vv) {
+	QVector<char*> qv;
+	vector<char*> v = *vv;
+	for (int i = 0; i < v.size(); i++) {
+		qv.push_back(v[i]);
+	}
+	QVariant var;
+	var.setValue(qv);
+	switch (type) {
+	case 0:
+		//登录成功，传一个userid
+		emit doSigninAckSig(var);
+		break;
+	}
+}
+
+void QtUdpChat::doShowMessageBox(int type, char* content) {
+	switch (type) {
+	case 0://错误
+		QMessageBox::critical(NULL, "错误", content, QMessageBox::Yes, QMessageBox::Yes);
+		break;
+	case 1://信息
+		QMessageBox::information(NULL, "信息", content, QMessageBox::Yes, QMessageBox::Yes);
 		break;
 	}
 }

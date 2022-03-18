@@ -1,22 +1,19 @@
 ﻿#include "UdpChatService.h"
-#include "ChatRoom.h"
-#include "QtUdpChat.h"
 
 //构造
-UdpChatService::UdpChatService(QtUdpChat* q, ChatRoom* c)
+UdpChatService::UdpChatService(QtUdpChat* q, ChatRoom* c, Emiter e, ArgsEmiter ae, ChatEmiter ce, ChatArgsEmiter cae)
 {
-	void* test;
-	test = reinterpret_cast<void*>();
-	//传回调函数指针
-	CALLBACKFun(&UdpChatService::serviceDispatcher);
-
 	qtUdpChat = q;
 	chatRoom = c;
+	emiter = e;
+	argsEmiter = ae;
+	chatEmiter = ce;
+	chatArgsEmiter = cae;
 	if (initService()) {
-		cout << "服务打开成功" << endl;
+		DP("服务打开成功\n");
 	}
 	else {
-		QMessageBox::critical(NULL, "错误", "服务器打开失败", QMessageBox::Yes | QMessageBox::No, QMessageBox::Yes);
+		emiter(0, "服务器打开失败");
 	}
 }
 
@@ -29,7 +26,8 @@ UdpChatService::~UdpChatService()
 
 //打开服务
 bool UdpChatService::initService() {
-	iocpServer = new IocpServer();
+	fun = std::bind(&UdpChatService::serviceDispatcher, this, _1);
+	iocpServer = new IocpServer(fun);
 	return (iocpServer->serverStart());
 }
 
@@ -58,7 +56,7 @@ void UdpChatService::serviceDispatcher(char* buff) {
 		s_GetSigninACK(buff);
 		break;
 	default:
-		cout << "接收到未知数据" << endl;
+		DP("接收到未知数据\n");
 	}
 }
 
@@ -80,27 +78,34 @@ void UdpChatService::s_PostRequest(char* addr, vector<char*> args) {
 
 //收到一条聊天记录
 void UdpChatService::s_GetRecord(char* buffer) {
-	cout << "收到record" << endl;
+	DP("收到record\n");
 	//输出返回值
 	char test;
 	memcpy(&test, &buffer[1], 1);
-	cout << (int)test << endl;
+	DP1("%d\n",(int)test);
 
 	vector<char*> v;
 
+	int i = 2;
+	int beginPtr[6] = { 0 };
+	int endPtr[6] = { 0 };
+	int num = 0;
+	char* idrecordsChar = nullptr;
+	char* roomidChar = nullptr;
+	char* contentChar = nullptr;
+	char* useridChar = nullptr;
+	char* timestampChar = nullptr;
+	char* usernameChar = nullptr;
 	//根据返回值进行操作
 	switch ((int)test) {
 	case 0:
 		//数据错误
-		cout << "接收到错误数据!!!" << endl;
+		DP("接收到错误数据!!!\n");
 		break;
 	case 1:
 		//检测到有人发了一条消息
 		//获取idrecords,roomid,content,userid,timestamp
-		int i = 2;
-		int beginPtr[6] = { 0 };
-		int endPtr[6] = { 0 };
-		int num = 0;
+		
 		beginPtr[num] = i;
 		while (buffer[i] != 0 || buffer[i + 1] != 0) {
 			if (buffer[i] == 0) {
@@ -113,16 +118,16 @@ void UdpChatService::s_GetRecord(char* buffer) {
 
 		//数据不完整直接返回false
 		if (beginPtr[1] == 0) {
-			cout << "接收到的数据错误" << endl;
+			DP("接收到的数据错误\n");
 			return;
 		}
 
-		char* idrecordsChar = new char[endPtr[0] - beginPtr[0] + 1];
-		char* roomidChar = new char[endPtr[1] - beginPtr[1] + 1];
-		char* contentChar = new char[endPtr[2] - beginPtr[2] + 1];
-		char* useridChar = new char[endPtr[3] - beginPtr[3] + 1];
-		char* timestampChar = new char[endPtr[4] - beginPtr[4] + 1];
-		char* usernameChar = new char[endPtr[5] - beginPtr[5] + 1];
+		idrecordsChar = new char[endPtr[0] - beginPtr[0] + 1];
+		roomidChar = new char[endPtr[1] - beginPtr[1] + 1];
+		contentChar = new char[endPtr[2] - beginPtr[2] + 1];
+		useridChar = new char[endPtr[3] - beginPtr[3] + 1];
+		timestampChar = new char[endPtr[4] - beginPtr[4] + 1];
+		usernameChar = new char[endPtr[5] - beginPtr[5] + 1];
 
 		memset(idrecordsChar, 0, endPtr[0] - beginPtr[0] + 1);
 		memset(roomidChar, 0, endPtr[1] - beginPtr[1] + 1);
@@ -145,7 +150,7 @@ void UdpChatService::s_GetRecord(char* buffer) {
 		v.push_back(idrecordsChar);
 		v.push_back(roomidChar);
 
-		chatRoom->doPostrecordAck(v);
+		chatArgsEmiter(0, &v);
 
 		v.clear();
 		delete idrecordsChar;
@@ -157,41 +162,43 @@ void UdpChatService::s_GetRecord(char* buffer) {
 		break;
 	case 2:
 		//数据库错误
-		cout << "数据库插入错误" << endl;
+		DP("数据库插入错误\n");
 		break;
 	default:
 		//未知返回值
-		cout << "接收到未知的返回值" << endl;
+		DP("接收到未知的返回值\n");
 		break;
 	}
 }
+
 //收到一堆聊天记录
 void UdpChatService::s_GetRecords(char* buffer) {
 	vector<char*> v;
 
-	cout << "收到records" << endl;
+	DP("收到records\n");
 	//输出返回值
 	char test;
 	memcpy(&test, &buffer[1], 1);
-	cout << (int)test << endl;
+	DP1("%d\n",(int)test);
 
 	char *idrecordsChar = nullptr, *roomidChar = nullptr,
 		*contentChar = nullptr, *useridChar = nullptr,
 		*timestampChar = nullptr, *usernameChar = nullptr;
 
+	int i = 2;
+	int beginPtr[120] = { 0 };
+	int endPtr[120] = { 0 };
+	int num = 0;
+
 	//根据返回值进行操作
 	switch ((int)test) {
 	case 0:
 		//数据错误
-		cout << "接收到错误数据!!!" << endl;
+		DP("接收到错误数据!!!\n");
 		break;
 	case 1:
 		//查询成功
 		//获取idrecords,roomid,content,userid,timestamp,username
-		int i = 2;
-		int beginPtr[120] = { 0 };
-		int endPtr[120] = { 0 };
-		int num = 0;
 		beginPtr[num] = i;
 		while (buffer[i] != 0 || buffer[i + 1] != 0) {
 			if (buffer[i] == 0) {
@@ -204,7 +211,7 @@ void UdpChatService::s_GetRecords(char* buffer) {
 
 		//没有收到聊天记录具体信息
 		if (beginPtr[1] == 0) {
-			cout << "接收到空的聊天记录" << endl;
+			DP("接收到空的聊天记录\n");
 			return;
 		}
 
@@ -253,9 +260,7 @@ void UdpChatService::s_GetRecords(char* buffer) {
 				v.push_back(usernameChar);
 				v.push_back(idrecordsChar);
 				v.push_back(roomidChar);
-
-				chatRoom->doPostrecordsAck(v);
-
+				chatArgsEmiter(1, &v);
 				v.clear();
 				delete idrecordsChar;
 				delete roomidChar;
@@ -269,57 +274,112 @@ void UdpChatService::s_GetRecords(char* buffer) {
 		break;
 	case 2:
 		//数据库错误
-		cout << "数据库查询错误" << endl;
+		DP("数据库查询错误\n");
 		break;
 	default:
 		//未知返回值
-		cout << "接收到未知的返回值" << endl;
+		DP("接收到未知的返回值\n");
 		break;
 	}
 }
+
 //收到用户注册ACK
 void UdpChatService::s_GetRegistACK(char* buffer) {
-	cout << "收到registACK" << endl;
+	DP("收到registACK\n");
 	//输出返回值
 	char test;
 	memcpy(&test, &buffer[1], 1);
-	cout << (int)test << endl;
+	DP1("%d",(int)test);
 
 	//根据返回值进行操作
 	switch ((int)test) {
 	case 0:
 		//数据错误
-		qtUdpChat->showSimpleMessageBox(0, "错误", "数据错误!");
+		emiter(0, "数据错误!");
 		break;
 	case 1:
 		//用户名已存在
-		qtUdpChat->showSimpleMessageBox(0, "错误", "用户名已存在!");
+		emiter(0, "用户名已存在!");
 		break;
 	case 2:
 		//数据库错误
-		qtUdpChat->showSimpleMessageBox(0, "错误", "数据库错误!");
+		emiter(0, "数据库错误!");
 		break;
 	case 3:
 		//注册成功
-		qtUdpChat->showSimpleMessageBox(1, "信息", "注册成功!");
+		emiter(1, "注册成功!");
 		//此处跳转到登录页面
-		//
-		//
+		emiter(3, nullptr);
 		break;
 	default:
 		//未知返回值
-		qtUdpChat->showSimpleMessageBox(0, "错误", "未知返回值!");
+		emiter(0, "未知返回值!");
 		break;
 	}
-	qtUdpChat->stopWaiting();
+	emiter(2, nullptr);
 }
+
 //收到检查密码ACK
 void UdpChatService::s_GetSigninACK(char* buffer) {
-	cout << "收到signinACK" << endl;
-	
+	DP("收到signinACK\n");
+	//输出返回值
+	char test;
+	memcpy(&test, &buffer[1], 1);
+	DP1("%d\n", (int)test);
+
+	char* roomID = nullptr;
+	int userid = 0;
+
+	//获取userid
+	int i = 2;
+	int beginPtr = 0;
+	int endPtr = 0;
+	int num = 0;
+	beginPtr = i;
+	while (buffer[i] != 0 || buffer[i + 1] != 0) {
+		if (buffer[i] == 0) {
+			endPtr = i;
+		}
+		i++;
+	}
+	char* useridString = new char[endPtr - beginPtr + 1];
+	memset(useridString, 0, endPtr - beginPtr + 1);
+	memcpy(useridString, &buffer[beginPtr], endPtr - beginPtr);
+	//寻找替代函数
+	userid = atoi(useridString);
+	vector<char*> args;
+	//根据返回值进行操作
+	switch ((int)test) {
+	case 0:
+		//数据错误
+		emiter(0, "数据错误!");
+		break;
+	case 1:
+		//密码正确，首先检查是否有房间号
+		//这里把要用的数据传过去
+		args.clear();
+		args.push_back(useridString);
+		//DP1("%s\n", &args);
+		argsEmiter(0, &args);
+		break;
+	case 2:
+		//数据库错误
+		emiter(0, "数据库错误!");
+		break;
+	case 3:
+		//密码错误
+		emiter(0, "密码错误!");
+		break;
+	default:
+		//未知返回值
+		emiter(0, "未知返回值!");
+		break;
+	}
+	//停止转圈
+	emiter(2, nullptr);
 }
 //收到心跳ACK
 void UdpChatService::s_GetHeartbeatACK(char* buffer) {
-	cout << "收到heartbeatACK" << endl;
-	
+	DP("收到heartbeatACK\n");
+	//暂时没什么功能
 }
